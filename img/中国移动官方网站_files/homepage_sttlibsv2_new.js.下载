@@ -1,0 +1,3596 @@
+/*
+	4.1版静态首页程序库
+	创建人：Jeffrey
+	修改时间：2016-06-15
+*/
+
+//省份相关数据
+var base_provinces = new Array();
+var i_prov = 0;
+base_provinces[i_prov++] = new Array("100","bj","北京");
+base_provinces[i_prov++] = new Array("200","gd","广东");
+base_provinces[i_prov++] = new Array("210","sh","上海");
+base_provinces[i_prov++] = new Array("220","tj","天津");
+base_provinces[i_prov++] = new Array("230","cq","重庆");
+base_provinces[i_prov++] = new Array("240","ln","辽宁");
+base_provinces[i_prov++] = new Array("250","js","江苏");
+base_provinces[i_prov++] = new Array("270","hb","湖北");
+base_provinces[i_prov++] = new Array("280","sc","四川");
+base_provinces[i_prov++] = new Array("290","sn","陕西");
+base_provinces[i_prov++] = new Array("311","he","河北");
+base_provinces[i_prov++] = new Array("351","sx","山西");
+base_provinces[i_prov++] = new Array("371","ha","河南");
+base_provinces[i_prov++] = new Array("431","jl","吉林");
+base_provinces[i_prov++] = new Array("451","hl","黑龙江");
+base_provinces[i_prov++] = new Array("471","nm","内蒙古");
+base_provinces[i_prov++] = new Array("531","sd","山东");
+base_provinces[i_prov++] = new Array("551","ah","安徽");
+base_provinces[i_prov++] = new Array("571","zj","浙江");
+base_provinces[i_prov++] = new Array("591","fj","福建");
+base_provinces[i_prov++] = new Array("731","hn","湖南");
+base_provinces[i_prov++] = new Array("771","gx","广西");
+base_provinces[i_prov++] = new Array("791","jx","江西");
+base_provinces[i_prov++] = new Array("851","gz","贵州");
+base_provinces[i_prov++] = new Array("871","yn","云南");
+base_provinces[i_prov++] = new Array("891","xz","西藏");
+base_provinces[i_prov++] = new Array("898","hi","海南");
+base_provinces[i_prov++] = new Array("931","gs","甘肃");
+base_provinces[i_prov++] = new Array("951","nx","宁夏");
+base_provinces[i_prov++] = new Array("971","qh","青海");
+base_provinces[i_prov++] = new Array("991","xj","新疆");
+base_provinces[i_prov++] = new Array("000","","集团");
+var default_prov = new Array("210","sh","上海");
+
+//根据省份名称(北京)、省份三位识别码(100)、省份两位简称(bj)，返回省份三位识别码
+function getProvCode(sim){
+	var pname = "";
+	for(var i=0;i<=31;i++){
+		if(base_provinces[i][0] == sim || base_provinces[i][1] == sim || base_provinces[i][2] == sim){
+			pname = base_provinces[i][0];
+			break;
+		}
+	}
+	return pname;
+}
+
+//根据省份名称(北京)、省份三位识别码(100)、省份两位简称(bj)，返回省份两位简称
+function getProvBrief(sim){
+	var pname = "";
+	for(var i=0;i<=31;i++){
+		if(base_provinces[i][0] == sim || base_provinces[i][1] == sim || base_provinces[i][2] == sim){
+			pname = base_provinces[i][1];
+			break;
+		}
+	}
+	return pname;
+}
+
+//根据省份名称(北京)、省份三位识别码(100)、省份两位简称(bj)，返回省份名称
+function getProvName(sim){
+	var pname = "";
+	for(var i=0;i<=31;i++){
+		if(base_provinces[i][0] == sim || base_provinces[i][1] == sim || base_provinces[i][2] == sim){
+			pname = base_provinces[i][2];
+			break;
+		}
+	}
+	return pname;
+}
+
+
+//根据省份名称(北京)、省份三位识别码(100)、省份两位简称(bj)，返回省份三位识别码
+function getProvNum(sim){
+	var pnum = "";
+	for(var i=0;i<=31;i++){
+		if(base_provinces[i][0] == sim || base_provinces[i][1] == sim || base_provinces[i][2] == sim){
+			pnum = base_provinces[i][0];
+			break;
+		}
+	}
+	return pnum;
+}
+
+
+// 根据cookie返回归属省市,如果cookie中不存在归属省市,则返回000|000.
+function getProvCity() {
+    var rv = "100|100";
+    var strCookie = document.cookie;
+    var arrCookie = strCookie.split("; ");
+    for (var i = 0; i < arrCookie.length; i++) {
+        var arr = arrCookie[i].split("=");
+        if (2 <= arr.length && "CmLocation" == arr[0]) {
+            rv = arr[1];
+            break;
+        }
+    }
+    return rv;
+}
+
+
+// 快捷服务区
+
+var notonline = ",";//未上线的省份用“,”包围起来组成字符串，如：“,qh,zj,”。首尾的“,”不可省略
+var cmcurprov = "bj";//插码默认省，正常默认值不会被使用
+
+var cz_pinfo_status = 0;//未获得
+var cz_pinfo_last = '';
+
+var m_cz_pinfo_status = 0;//未获得
+var m_cz_pinfo_last = '';
+
+var flow_pinfo_status = 0;//未获得
+var flow_pinfo_last = '';
+
+var m_flow_pinfo_status = 0;//未获得
+var m_flow_pinfo_last = '';
+//动态获取省份相关信息
+function fun_pinfo() {
+	fun_pinfo2(false);
+}
+function m_fun_pinfo(){
+    m_fun_pinfo2(false);
+}
+function fun_flowpinfo() {
+	fun_flowpinfo2(false);
+}
+function m_fun_flowpinfo(){
+    m_fun_flowpinfo2(false);
+}
+
+//PC端充值处理
+function fun_pinfo2(needShowWait){
+	var pho = document.getElementById("cz_pho").value;
+	var acurl = $("#cz_urlgo").val();
+	document.getElementById("cz_form").action=acurl;
+	/*
+	if(/^\d+$/.test(pho)){
+		if(pho.length>=3){
+			var sph = "";
+			var checkb = false;
+			if(pho.length>=7){
+				sph = pho.substring(0,7);
+				checkb = (isPhoneNumber(sph+"1234")==0);
+			} else if(pho.length==11){
+				sph = pho;
+				checkb = (isPhoneNumber(sph)==0);
+			} else {
+				sph = pho.substring(0,3);
+				checkb = (isPhoneNumber(sph+"12345678")==0);
+			}
+			if(checkb){
+				fun_hiddenerr();
+				if((pho.length==7 || pho.length==11) && cz_pinfo_last != pho.substring(0,7)){
+					cz_pinfo_status = 0;
+				}
+				if((pho.length==7 || pho.length==11) && cz_pinfo_status == 0){
+					//执行
+					cz_pinfo_last=pho.substring(0,7);
+					var wrong = function(){
+						fun_showerr("已断开,请重试");
+					}
+					var tid = null;
+					if(needShowWait){
+						fun_showerr("请稍候...");
+						tid = window.setTimeout(wrong, 5000);
+					}
+					//Ajax请求服务器，获得结果（是否正确获得信息,省URL或错误代码）
+					var resfun= function(rst){
+						var rs = rst.split(" ");
+						if(rs[0]=="Y"){
+							var bif = getProvBrief(rs[1]);
+							var nomsg = "归属省未开通该项业务";
+							nomsg = "非本省号码";
+
+							var acurl = $("#cz_urlgo").val();
+							if(acurl==null || acurl==""){//正常不会被执行
+								clearTO(tid);
+								cz_pinfo_status=0;
+								fun_showerr(nomsg);
+							} else {
+
+								if(location.pathname.toLowerCase().indexOf(bif)!=-1){
+									document.getElementById("cz_form").action=acurl;
+									cmcurprov = getProvCity();
+									cz_pinfo_status=1;//已获得
+									clearTO(tid);
+									fun_hiddenerr();
+
+								}
+								else{
+									clearTO(tid);
+									cz_pinfo_status=0;
+									fun_showerr(nomsg);
+								}
+							}
+							
+						} else if (rs[0]=="N"){
+							clearTO(tid);
+							cz_pinfo_status=0;
+							fun_showerr("请输入正确的移动号码");
+						}
+					}
+
+					//执行Ajax
+					var majax = false;
+					if (window.XMLHttpRequest) {
+						majax = new XMLHttpRequest();
+					} else if (window.ActiveXObject) {
+						majax = new ActiveXObject("Microsoft.XMLHTTP");
+					}
+					if (majax) {
+						try{
+							majax.open("GET", "/service/prov/prov.jsp?phone=" + pho.substring(0,7) + "1234",false);
+							majax.onreadystatechange = function() {
+								if (majax.readyState == 4) {
+									if(majax.status == 200){
+										resfun(majax.responseText);
+									}else{
+										clearTO(tid);
+										cz_pinfo_status=0;
+										if(needShowWait){
+											fun_showerr("已断开,请重试");
+										}
+									}
+								}
+							}
+							majax.send(null);
+						}catch(te){
+							cz_pinfo_status=0;
+							if(needShowWait){
+								fun_showerr("已断开,请重试");
+							}
+						}
+					} else {
+						clearTO(tid);
+						if(needShowWait){
+							alert("您的浏览器不支持Ajax实现!");
+						}
+					}
+				}
+			} else {
+				fun_showerr("请输入正确的移动号码");
+			}
+		} else {
+			fun_hiddenerr();
+		}
+	} else if (pho.length>0){
+		fun_showerr("请输入正确的移动号码");
+	} else {
+		fun_hiddenerr();
+	}*/
+}
+
+//IPAD端充值处理
+function m_fun_pinfo2(needShowWait){
+	var pho = document.getElementById("m_cz_pho").value;
+	var acurl = $("#m_cz_urlgo").val();
+	document.getElementById("m_cz_form").action=acurl;
+	/*if(/^\d+$/.test(pho)){
+		if(pho.length>=3){
+			var sph = "";
+			var checkb = false;
+			if(pho.length>=7){
+				sph = pho.substring(0,7);
+				checkb = (isPhoneNumber(sph+"1234")==0);
+			} else if(pho.length==11){
+				sph = pho;
+				checkb = (isPhoneNumber(sph)==0);
+			} else {
+				sph = pho.substring(0,3);
+				checkb = (isPhoneNumber(sph+"12345678")==0);
+			}
+			if(checkb){
+				m_fun_hiddenerr();
+				if((pho.length==7 || pho.length==11) && m_cz_pinfo_last != pho.substring(0,7)){
+					m_cz_pinfo_status = 0;
+				}
+				if((pho.length==7 || pho.length==11) && m_cz_pinfo_status == 0){
+					//执行
+					m_cz_pinfo_last=pho.substring(0,7);
+					var wrong = function(){
+						m_fun_showerr("已断开,请重试");
+					}
+					var tid = null;
+					if(needShowWait){
+						m_fun_showerr("请稍候...");
+						tid = window.setTimeout(wrong, 5000);
+					}
+					//Ajax请求服务器，获得结果（是否正确获得信息,省URL或错误代码）
+					var resfun= function(rst){
+						var rs = rst.split(" ");
+						if(rs[0]=="Y"){
+							var bif = getProvBrief(rs[1]);
+							var nomsg = "归属省未开通该项业务";
+							nomsg = "非本省号码";
+
+							var acurl = $("#m_cz_urlgo").val();
+							if(acurl==null || acurl==""){//正常不会被执行
+								clearTO(tid);
+								m_cz_pinfo_status=0;
+								m_fun_showerr(nomsg);
+							} else {
+
+								if(location.pathname.toLowerCase().indexOf(bif)!=-1){
+									document.getElementById("cz_form").action=acurl;
+									cmcurprov = getProvCity();
+									m_cz_pinfo_status=1;//已获得
+									clearTO(tid);
+									m_fun_hiddenerr();
+
+								}
+								else{
+									clearTO(tid);
+									m_cz_pinfo_status=0;
+									m_fun_showerr(nomsg);
+								}
+							}
+							
+						} else if (rs[0]=="N"){
+							clearTO(tid);
+							m_cz_pinfo_status=0;
+							m_fun_showerr("请输入正确的移动号码");
+						}
+					}
+
+					//执行Ajax
+					var majax = false;
+					if (window.XMLHttpRequest) {
+						majax = new XMLHttpRequest();
+					} else if (window.ActiveXObject) {
+						majax = new ActiveXObject("Microsoft.XMLHTTP");
+					}
+					if (majax) {
+						try{
+							majax.open("GET", "/service/prov/prov.jsp?phone=" + pho.substring(0,7) + "1234",false);
+							majax.onreadystatechange = function() {
+								if (majax.readyState == 4) {
+									if(majax.status == 200){
+										resfun(majax.responseText);
+									}else{
+										clearTO(tid);
+										m_cz_pinfo_status=0;
+										if(needShowWait){
+											m_fun_showerr("已断开,请重试");
+										}
+									}
+								}
+							}
+							majax.send(null);
+						}catch(te){
+							m_cz_pinfo_status=0;
+							if(needShowWait){
+								m_fun_showerr("已断开,请重试");
+							}
+						}
+					} else {
+						clearTO(tid);
+						if(needShowWait){
+							alert("您的浏览器不支持Ajax实现!");
+						}
+					}
+				}
+			} else {
+				m_fun_showerr("请输入正确的移动号码");
+			}
+		} else {
+			m_fun_hiddenerr();
+		}
+	} else if (pho.length>0){
+		m_fun_showerr("请输入正确的移动号码");
+	} else {
+		m_fun_hiddenerr();
+	}
+	*/
+}
+
+//PC端流量处理 ----查看是否能判断和提交
+function fun_flowpinfo2(needShowWait){
+	var pho = document.getElementById("flow_pho").value;
+	
+	if(/^\d+$/.test(pho)){
+		if(pho.length>=3){
+			var sph = "";
+			var checkb = false;
+			if(pho.length>=7){
+				sph = pho.substring(0,7);
+				checkb = (isPhoneNumber(sph+"1234")==0);
+			} else if(pho.length==11){
+				sph = pho;
+				checkb = (isPhoneNumber(sph)==0);
+			} else {
+				sph = pho.substring(0,3);
+				checkb = (isPhoneNumber(sph+"12345678")==0);
+			}
+			if(checkb){
+				fun_hiddenflowerr();
+				if((pho.length==7 || pho.length==11) && flow_pinfo_last != pho.substring(0,7)){
+					flow_pinfo_status = 0;
+				}
+				if((pho.length==7 || pho.length==11) && flow_pinfo_status == 0){
+					//执行
+					flow_pinfo_last=pho.substring(0,7);
+					var wrong = function(){
+						fun_showflowerr("已断开,请重试");
+					}
+					var tid = null;
+					if(needShowWait){
+						fun_showflowerr("请稍候...");
+						tid = window.setTimeout(wrong, 5000);
+					}
+					//Ajax请求服务器，获得结果（是否正确获得信息,省URL或错误代码）
+					var resfun= function(rst){
+						var rs = rst.split(" ");
+						if(rs[0]=="Y"){
+							var bif = getProvBrief(rs[1]);
+							var nomsg = "归属省未开通该项业务";
+							nomsg = "非本省号码";
+
+							var flowurl = "http://shop.10086.cn/i/?f=rechargegprs";
+							if(flowurl==null || flowurl==""){//正常不会被执行
+								clearTO(tid);
+								flow_pinfo_status=0;
+								fun_showflowerr(nomsg);
+							} else {
+
+								if(location.pathname.toLowerCase().indexOf(bif)!=-1){
+									cmcurprov = getProvCity();
+									flow_pinfo_status=1;//已获得
+									clearTO(tid);
+									fun_hiddenflowerr();
+
+								}
+								else{
+									clearTO(tid);
+									flow_pinfo_status=0;
+									fun_showflowerr(nomsg);
+								}
+							}
+							
+						} else if (rs[0]=="N"){
+							clearTO(tid);
+							flow_pinfo_status=0;
+							fun_showflowerr("请输入正确的移动号码");
+						}
+					}
+
+					//执行Ajax
+					var majax = false;
+					if (window.XMLHttpRequest) {
+						majax = new XMLHttpRequest();
+					} else if (window.ActiveXObject) {
+						majax = new ActiveXObject("Microsoft.XMLHTTP");
+					}
+					if (majax) {
+						try{
+							majax.open("GET", "/service/prov/prov.jsp?phone=" + pho.substring(0,7) + "1234",false);
+							majax.onreadystatechange = function() {
+								if (majax.readyState == 4) {
+									if(majax.status == 200){
+										resfun(majax.responseText);
+									}else{
+										clearTO(tid);
+										flow_pinfo_status=0;
+										if(needShowWait){
+											fun_showflowerr("已断开,请重试");
+										}
+									}
+								}
+							}
+							//majax.send(null);
+						}catch(te){
+							flow_pinfo_status=0;
+							if(needShowWait){
+								fun_showflowerr("已断开,请重试");
+							}
+						}
+					} else {
+						clearTO(tid);
+						if(needShowWait){
+							alert("您的浏览器不支持Ajax实现!");
+						}
+					}
+				}
+			} else {
+				fun_showflowerr("请输入正确的移动号码");
+			}
+		} else {
+			fun_hiddenflowerr();
+		}
+	} else if (pho.length>0){
+		fun_showflowerr("请输入正确的移动号码");
+	} else {
+		fun_hiddenflowerr();
+	}
+}
+
+//PC端流量处理 ----查看是否能判断和提交
+function m_fun_flowpinfo2(needShowWait){
+	var pho = document.getElementById("m_flow_pho").value;
+	
+	if(/^\d+$/.test(pho)){
+		if(pho.length>=3){
+			var sph = "";
+			var checkb = false;
+			if(pho.length>=7){
+				sph = pho.substring(0,7);
+				checkb = (isPhoneNumber(sph+"1234")==0);
+			} else if(pho.length==11){
+				sph = pho;
+				checkb = (isPhoneNumber(sph)==0);
+			} else {
+				sph = pho.substring(0,3);
+				checkb = (isPhoneNumber(sph+"12345678")==0);
+			}
+			if(checkb){
+				m_fun_hiddenflowerr();
+				if((pho.length==7 || pho.length==11) && m_flow_pinfo_last != pho.substring(0,7)){
+					m_flow_pinfo_status = 0;
+				}
+				if((pho.length==7 || pho.length==11) && m_flow_pinfo_status == 0){
+					//执行
+					m_flow_pinfo_last=pho.substring(0,7);
+					var wrong = function(){
+						m_fun_showflowerr("已断开,请重试");
+					}
+					var tid = null;
+					if(needShowWait){
+						m_fun_showflowerr("请稍候...");
+						tid = window.setTimeout(wrong, 5000);
+					}
+					//Ajax请求服务器，获得结果（是否正确获得信息,省URL或错误代码）
+					var resfun= function(rst){
+						var rs = rst.split(" ");
+						if(rs[0]=="Y"){
+							var bif = getProvBrief(rs[1]);
+							var nomsg = "归属省未开通该项业务";
+							nomsg = "非本省号码";
+
+							var flowurl = "http://shop.10086.cn/i/?f=rechargegprs";
+							if(flowurl==null || flowurl==""){//正常不会被执行
+								clearTO(tid);
+								m_flow_pinfo_status=0;
+								m_fun_showflowerr(nomsg);
+							} else {
+
+								if(location.pathname.toLowerCase().indexOf(bif)!=-1){
+									cmcurprov = getProvCity();
+									m_flow_pinfo_status=1;//已获得
+									clearTO(tid);
+									m_fun_hiddenflowerr();
+
+								}
+								else{
+									clearTO(tid);
+									m_flow_pinfo_status=0;
+									m_fun_showflowerr(nomsg);
+								}
+							}
+							
+						} else if (rs[0]=="N"){
+							clearTO(tid);
+							m_flow_pinfo_status=0;
+							m_fun_showflowerr("请输入正确的移动号码");
+						}
+					}
+
+					//执行Ajax
+					var majax = false;
+					if (window.XMLHttpRequest) {
+						majax = new XMLHttpRequest();
+					} else if (window.ActiveXObject) {
+						majax = new ActiveXObject("Microsoft.XMLHTTP");
+					}
+					if (majax) {
+						try{
+							majax.open("GET", "/service/prov/prov.jsp?phone=" + pho.substring(0,7) + "1234",false);
+							majax.onreadystatechange = function() {
+								if (majax.readyState == 4) {
+									if(majax.status == 200){
+										resfun(majax.responseText);
+									}else{
+										clearTO(tid);
+										m_flow_pinfo_status=0;
+										if(needShowWait){
+											m_fun_showflowerr("已断开,请重试");
+										}
+									}
+								}
+							}
+							//majax.send(null);
+						}catch(te){
+							m_flow_pinfo_status=0;
+							if(needShowWait){
+								m_fun_showflowerr("已断开,请重试");
+							}
+						}
+					} else {
+						clearTO(tid);
+						if(needShowWait){
+							alert("您的浏览器不支持Ajax实现!");
+						}
+					}
+				}
+			} else {
+				m_fun_showflowerr("请输入正确的移动号码");
+			}
+		} else {
+			m_fun_hiddenflowerr();
+		}
+	} else if (pho.length>0){
+		m_fun_showflowerr("请输入正确的移动号码");
+	} else {
+		m_fun_hiddenflowerr();
+	}
+}
+
+//PC端提交
+function fun_czsubmit2(){
+	fun_chama("INDEX_HOME_C_KJ_CZ_CHF_"+CmLocation);
+	var pho = document.getElementById("cz_pho").value;
+	
+	if (pho == "请输入手机号码") {
+		$("#cz_pho").css("color","#ff0000");
+		$("#cz_pho").css("font-family","微软雅黑");
+		return;
+	} 
+	
+	if(isPhoneNumber(pho) != 0){
+		fun_showerr("请输入正确的移动号码");
+		//fun_chama("INDEX_LJCZ_SB");
+		return;
+	}
+
+
+	var sum = document.getElementById("cz_val").value;
+	if(sum!=30 && sum != 50 && sum!=100 && sum!=300 && sum!=500 && sum!=0){//正常不会被执行
+		fun_showerr("请重新选择金额");
+		//fun_chama("INDEX_LJCZ_SB");
+		return;
+	}
+	fun_pinfo2(true);
+	document.getElementById("cz_form").submit();
+	/*if (!fun_iserrblock()) {
+		if (cz_pinfo_status==1) {
+			cz_pinfo_status = 0;
+			//fun_chama("INDEX_LJCZ_" + cmcurprov);
+			//fun_chama2();
+			document.getElementById("cz_form").submit();
+		}
+		else if(cz_pinfo_status==0) {
+			fun_pinfo2(true);
+			if(cz_pinfo_status == 1){
+				cz_pinfo_status = 0;
+				//fun_chama("INDEX_LJCZ_" + cmcurprov);
+				//fun_chama2();
+				document.getElementById("cz_form").submit();
+			}
+			else {
+				//fun_chama("INDEX_LJCZ_SB");
+			}
+		}
+	}else{
+		//fun_chama("INDEX_LJCZ_SB");
+	}*/
+}
+
+//IPAD提交
+function m_fun_czsubmit2(){
+	fun_chama("INDEX_HOME_C_KJ_CZ_CHF_"+CmLocation);
+	var pho = document.getElementById("m_cz_pho").value;
+	
+	if (pho == "请输入手机号码") {
+		$("#m_cz_pho").css("color","#ff0000");
+		$("#m_cz_pho").css("font-family","微软雅黑");
+		return;
+	} 
+	
+	if(isPhoneNumber(pho) != 0){
+		m_fun_showerr("请输入正确的移动号码");
+		//fun_chama("INDEX_LJCZ_SB");
+		return;
+	}
+
+
+	var sum = document.getElementById("m_cz_val").value;
+	if(sum!=30 && sum != 50 && sum!=100 && sum!=300 && sum!=500 && sum!=0){//正常不会被执行
+		m_fun_showerr("请重新选择金额");
+		//fun_chama("INDEX_LJCZ_SB");
+		return;
+	}
+	m_fun_pinfo2(true);
+	document.getElementById("m_cz_form").submit();
+	/*if (!m_fun_iserrblock()) {
+		if (m_cz_pinfo_status==1) {
+			m_cz_pinfo_status = 0;
+			//fun_chama("INDEX_LJCZ_" + cmcurprov);
+			//fun_chama2();
+			document.getElementById("m_cz_form").submit();
+		}
+		else if(m_cz_pinfo_status==0) {
+			m_fun_pinfo2(true);
+			if(m_cz_pinfo_status == 1){
+				m_cz_pinfo_status = 0;
+				//fun_chama("INDEX_LJCZ_" + cmcurprov);
+				//fun_chama2();
+				document.getElementById("m_cz_form").submit();
+			}
+			else {
+				//fun_chama("INDEX_LJCZ_SB");
+			}
+		}
+	}else{
+		//fun_chama("INDEX_LJCZ_SB");
+	}
+	*/
+}
+
+//PC端流量充值
+function fun_flowsubmit2(){
+	fun_chama("INDEX_HOME_C_KJ_CZ_CLL_"+CmLocation);
+	var pho = document.getElementById("flow_pho").value;
+	
+	if (pho == "请输入手机号码") {
+		$("#flow_pho").css("color","#ff0000");
+		$("#flow_pho").css("font-family","微软雅黑");
+		return;
+	} 
+	
+	if(isPhoneNumber(pho) != 0){
+		fun_showflowerr("请输入正确的移动号码");
+		//fun_chama("INDEX_LJCZ_SB");
+		return;
+	}
+
+
+	var sum = document.getElementById("flow_val").value;
+	if(sum!=30 && sum != 70 && sum!=150 && sum!=500 && sum!=1024 && sum!=0){//正常不会被执行
+		fun_showflowerr("请重新选择金额");
+		//fun_chama("INDEX_LJCZ_SB");
+		return;
+	}
+	if (!fun_iserrflowblock()) {
+	    window.open("http://shop.10086.cn/i/?f=rechargegprs&mobileNo="+ pho + "&amount="+ $("#flow_val").val() +"");
+		/*if (flow_pinfo_status==1) {
+			flow_pinfo_status = 0;
+			//fun_chama("INDEX_LJCZ_" + cmcurprov);
+			//fun_chama2();
+			//$("#flow_sbtn").attr("href","http://shop.10086.cn/i/?f=rechargegprs&mobileNo="+ pho + "&amount="+ $("#flow_val").val() +"");
+			window.open("http://shop.10086.cn/i/?f=rechargegprs&mobileNo="+ pho + "&amount="+ $("#flow_val").val() +"");
+		}
+		else if(flow_pinfo_status==0) {
+			fun_flowpinfo2(true);
+			if(flow_pinfo_status == 1){
+				flow_pinfo_status = 0;
+				//fun_chama("INDEX_LJCZ_" + cmcurprov);
+				//fun_chama2();
+				//$("#flow_sbtn").attr("href","http://shop.10086.cn/i/?f=rechargegprs&mobileNo="+ pho + "&amount="+ $("#flow_val").val() +"");
+				window.open("http://shop.10086.cn/i/?f=rechargegprs&mobileNo="+ pho + "&amount="+ $("#flow_val").val() +"");
+			}
+			else {
+				//fun_chama("INDEX_LJCZ_SB");
+			}
+		}*/
+	}else{
+		//fun_chama("INDEX_LJCZ_SB");
+	}
+}
+
+//IPAD端流量充值
+function m_fun_flowsubmit2(){
+	fun_chama("INDEX_HOME_C_KJ_CZ_CLL_"+CmLocation);
+	var pho = document.getElementById("m_flow_pho").value;
+	
+	if (pho == "请输入手机号码") {
+		$("#m_flow_pho").css("color","#ff0000");
+		$("#m_flow_pho").css("font-family","微软雅黑");
+		return;
+	} 
+	
+	if(isPhoneNumber(pho) != 0){
+		m_fun_showflowerr("请输入正确的移动号码");
+		//fun_chama("INDEX_LJCZ_SB");
+		return;
+	}
+
+
+	var sum = document.getElementById("flow_val").value;
+	if(sum!=30 && sum != 70 && sum!=150 && sum!=500 && sum!=1024 && sum!=0){//正常不会被执行
+		m_fun_showflowerr("请重新选择金额");
+		//fun_chama("INDEX_LJCZ_SB");
+		return;
+	}
+	if (!m_fun_iserrflowblock()) {
+	window.open("http://shop.10086.cn/i/?f=rechargegprs&mobileNo="+ pho + "&amount="+ $("#m_flow_val").val() +"");
+	/*
+		if (flow_pinfo_status==1) {
+			flow_pinfo_status = 0;
+			//fun_chama("INDEX_LJCZ_" + cmcurprov);
+			fun_chama2();
+			//$("#flow_sbtn").attr("href","http://shop.10086.cn/i/?f=rechargegprs&mobileNo="+ pho + "&amount="+ $("#flow_val").val() +"");
+			window.location.href="http://shop.10086.cn/i/?f=rechargegprs&mobileNo="+ pho + "&amount="+ $("#flow_val").val() +"";
+		}
+		else if(flow_pinfo_status==0) {
+			fun_flowpinfo2(true);
+			if(flow_pinfo_status == 1){
+				flow_pinfo_status = 0;
+				//fun_chama("INDEX_LJCZ_" + cmcurprov);
+				//fun_chama2();
+				//$("#flow_sbtn").attr("href","http://shop.10086.cn/i/?f=rechargegprs&mobileNo="+ pho + "&amount="+ $("#flow_val").val() +"");
+				window.location.href="http://shop.10086.cn/i/?f=rechargegprs&mobileNo="+ pho + "&amount="+ $("#flow_val").val() +"";
+			}
+			else {
+				//fun_chama("INDEX_LJCZ_SB");
+			}
+		}
+		*/
+	}else{
+		//fun_chama("INDEX_LJCZ_SB");
+	}
+}
+
+//插码函数，避免异常
+function fun_chama(sign){
+	try{
+		if (typeof(_tag)!= 'undefined'){
+			_tag.dcsMultiTrack('WT.event', sign);
+		}
+	}catch(t){}
+}
+
+//分号码、金额插码
+function fun_chama2(){
+	try{
+		var amountobj = document.getElementById("cz_val");
+		var mobileNoobj = document.getElementById("cz_pho");
+		if (typeof(_tag)!= 'undefined'){
+			_tag.dcsMultiTrack('WT.INDEX_mobile',mobileNoobj.value,'WT.INDEX_money',amountobj.value);
+		}
+	}catch(t){}
+}
+
+//----------------充值手机号判断--------------------
+
+//初始化手机号码框
+
+function fun_showerr(str){
+	setInnerText(document.getElementById("cz_div_notice"),str);
+	fun_showdiv("cz_div_notice");
+}
+
+function m_fun_showerr(str){
+	setInnerText(document.getElementById("m_cz_div_notice"),str);
+	fun_showdiv("m_cz_div_notice");
+}
+function fun_hiddenerr(){
+	fun_hiddendiv("cz_div_notice");
+}
+
+function m_fun_hiddenerr(){
+	fun_hiddendiv("m_cz_div_notice");
+}
+function fun_iserrblock(){
+	return (document.getElementById("cz_div_notice").style.display=="block");
+}
+function m_fun_iserrblock(){
+	return (document.getElementById("m_cz_div_notice").style.display=="block");
+}
+
+//初始化流量手机号码框
+function fun_initflowpho(){
+	var pho = getCookie("flowonehis");
+	if(pho!=null && isPhoneNumber(pho) == 0){
+		document.getElementById("flow_pho").value=pho;
+	}
+}
+
+function m_fun_initflowpho(){
+	var pho = getCookie("m_flowonehis");
+	if(pho!=null && isPhoneNumber(pho) == 0){
+		document.getElementById("m_flow_pho").value=pho;
+	}
+}
+function fun_showflowerr(str){
+	setInnerText(document.getElementById("flow_div_notice"),str);
+	fun_showdiv("flow_div_notice");
+}
+
+function m_fun_showflowerr(str){
+	setInnerText(document.getElementById("m_flow_div_notice"),str);
+	fun_showdiv("m_flow_div_notice");
+}
+function fun_hiddenflowerr(){
+	fun_hiddendiv("flow_div_notice");
+}
+
+function m_fun_hiddenflowerr(){
+	fun_hiddendiv("m_flow_div_notice");
+}
+function fun_iserrflowblock(){
+	return (document.getElementById("flow_div_notice").style.display=="block");
+}
+function m_fun_iserrflowblock(){
+	return (document.getElementById("m_flow_div_notice").style.display=="block");
+}
+
+//------------------------------------------------------------------------------
+
+function fun_tocamountdis(){
+	var o = document.getElementById("cz_amall");
+	if(o.style.display=="block"){
+		o.style.display="none"
+	} else {
+		o.style.display="block"
+	}
+}
+
+//清除定时任务
+function clearTO(tid){
+	try{
+		window.clearTimeout(tid);
+	}catch(e){}
+}
+
+function setInnerText(obj,str){
+	while (obj.childNodes.length != 0) {
+		obj.removeChild(obj.childNodes[0]);
+	}
+	var objp = document.createElement("p"); 
+	obj.appendChild(objp);
+	objp.appendChild(document.createTextNode(str));
+}
+
+function fun_showfs(){
+	fun_showdiv("cz_fs");
+}
+
+function fun_hidfs(){
+	fun_hiddendiv("cz_fs");
+}
+
+function fun_showdiv(oid){
+	var o = document.getElementById(oid);
+	if(o){
+		o.style.display = "block";
+	}
+}
+
+function fun_hiddendiv(oid){
+	var o = document.getElementById(oid);
+	if(o){
+		o.style.display = "none";
+	}
+}
+/*
+function fun_update_samount(amount){
+	// setInnerText(document.getElementById("cz_amdis"),"充值"+amount + "元");
+	
+	if (amount == 0) {
+		document.getElementById("cz_val").value = "";
+	}
+	else {
+		document.getElementById("cz_val").value = amount;
+	}
+	
+
+	$("#cz0").attr("class","");
+	$("#cz30").attr("class","");
+	$("#cz50").attr("class","");
+	$("#cz100").attr("class","");
+	$("#cz300").attr("class","");
+	$("#cz500").attr("class","");
+	var czsubmit_src = "";
+    $(".czsubmit span").html(czsubmit_src);
+	
+	
+	if(amount == 0){ $("#cz0").attr("class","on");rebate("0");}
+	if(amount == 30){ $("#cz30").attr("class","on");rebate("30");}
+	if(amount == 50) {$("#cz50").attr("class","on");rebate("50");}
+	if(amount == 100){ $("#cz100").attr("class","on");rebate("100");}
+	if(amount == 300){ $("#cz300").attr("class","on");rebate("300");}
+	if(amount == 500){ $("#cz500").attr("class","on");rebate("500");}
+
+}
+*/
+
+/*
+function rebate(money){
+	var jsonURL = './depositprompt'+getProvNum(previewProv)+'.json';
+					
+	$.getJSON(jsonURL,function(data){
+		var czsubmit_src = "";
+		for(var i = 0;i<data['data'].length;i++){
+			if(money==data['data'][i].money_sum){
+				czsubmit_src = $('<span/>').html(data['data'][i].special_offer).text();
+				break;
+			}
+		}
+		//$(".czjf span").html(czsubmit_src);
+		return parseFloat(czsubmit_src);	
+	});
+	
+}
+*/
+
+
+
+
+
+
+
+
+/**
+ * Created by stt on 2015/12/10 0010.
+ */
+$(function () {
+    //主广告轮播（移动端）
+    if (isMobile()) {
+        $('#carousel-example-captions').hammer().on('swipeleft swipeleftup swipeleftdown', function () {
+            $(this).carousel('next');
+        });
+        $('#carousel-example-captions').hammer().on('swiperight swiperightup swiperightdown', function () {
+            $(this).carousel('prev');
+        });
+    }
+    //4G专区图片晃动
+    if ($(document.body).outerWidth(true) > 768) {
+        $(".fourg .row section img").mouseover(function () {
+            $(this).animate({right: "10px"}, 250);
+        }).mouseout(function () {
+            $(this).animate({right: "0px"}, 250);
+        });
+        //买手机区图片晃动
+        $(".buyphone .row img").mouseover(function () {
+            $(this).animate({right: "10px"}, 250);
+        }).mouseout(function () {
+            $(this).animate({right: "0px"}, 250);
+        });
+        //业务推荐去图片晃动
+        $(".ywtj .row section img").mouseover(function () {
+            $(this).animate({right: "10px"}, 250);
+        }).mouseout(function () {
+            $(this).animate({right: "0px"}, 250);
+        });
+    }
+    //辅助需求导航区窄屏幕伸缩效果
+
+    $(".index-help .row h2 a").click(function () {
+        if ($(this).parent().siblings(".linkgroup").is(":hidden")) {
+            $(this).parent().siblings(".linkgroup").show();
+            $(this).html("×");
+        } else {
+            $(this).parent().siblings(".linkgroup").hide();
+            $(this).html("+");
+        }
+        return false;
+    });
+
+    //公告滚动
+
+    (function () {
+        var ul = $(".indexgg ul");
+        var interval = null;
+        var timeOut = null;
+        //向右运动
+        var funcRight = function () {
+            $(".indexgg ul li:first").appendTo(ul);
+
+        }
+        //向左运动
+        var funcLeft = function () {
+            $(".indexgg ul li:last").prependTo(ul);
+        }
+
+        function do_move() {
+            if (interval) {
+                clearInterval(interval);
+            }
+            interval = setInterval(funcRight, 4000);
+        }
+
+        function stop_move() {
+            clearInterval(interval);
+            interval = null;
+        }
+
+        do_move();
+
+
+        if (!isMobile()) {
+            $(".qhbtn").on({
+                "mouseover": function () {
+                    stop_move();
+                },
+                "mouseout": function () {
+                    do_move();
+                }
+            });
+
+            ul.on({
+                "mouseover": function () {
+                    clearInterval(interval);
+                },
+                "mouseout": function () {
+                    if (interval) {
+                        clearInterval(interval);
+                    }
+                    interval = setInterval(funcRight, 4000);
+                }
+            });
+            $(".qhbtn .left").click(function () {
+                if (interval) {
+                    clearInterval(interval);
+                }
+                funcLeft();
+            });
+            $(".qhbtn .right").click(function () {
+                if (interval) {
+                    clearInterval(interval);
+                }
+                funcRight();
+            });
+
+        } else {
+            $('.qhbtn .left').hammer().on('tap', function () {
+                if (interval) {
+                    clearInterval(interval);
+                }
+                if (timeOut) {
+                    clearTimeout(timeOut);
+                }
+                funcLeft();
+                timeOut = setTimeout(do_move);
+            });
+            $('.qhbtn .right').hammer().on('tap', function () {
+                if (interval) {
+                    clearInterval(interval);
+                }
+                if (timeOut) {
+                    clearTimeout(timeOut);
+                }
+
+                funcRight();
+                timeOut = setTimeout(do_move);
+            });
+        }
+
+    }());
+
+    //优惠促销轮播图
+
+    (function () {
+        var g_bMoveLeft = true;//控制左右移动
+        var g_oTimer = null;//移动定时器
+        var g_oTimerOut = null;//无缝移动定时器
+
+        var g_bPause = true;//控制是否连续运动还是每个图片停顿
+        var g_iPauseTime = 4000;//默认运动间隔
+        var g_iSpeed = 5;//每次移动像素
+        var g_distance = parseInt($(".indexbox").outerWidth(true));//滚动距离
+        var g_imageDsitance = parseInt($(".indexbox").first().outerWidth(true));//单个图片div宽度
+
+        $(window).resize(function () {
+                g_imageDsitance = parseInt($(".indexbox").first().outerWidth(true));//单个图片div宽度
+        });
+		
+        //初始化--图片翻倍 相对定位 增加最外层宽度
+        var allImages = $(".yhgundong").children().clone(true);//图片复制
+        $(".yhgundong").append(allImages);
+        var length = $(".yhgundong").children().length;//图片总长度
+        $(".yhgundong").css({"position": "absolute", "left": "0px", "width": length * g_distance});
+        $(window).resize(function () {
+            $(".yhgundong").css({"position": "absolute", "left": "0px", "width": length * g_distance});
+
+        });
+
+
+        //开始运动函数
+        function startMove(bLeft) {
+            g_bMoveLeft = bLeft;
+
+            if (g_oTimer) {
+                clearInterval(g_oTimer);
+            }
+            if (g_oTimerOut) {
+                clearTimeout(g_oTimerOut);
+            }
+
+            g_oTimer = setInterval(doMove, 5);
+        }
+
+
+        //停止运动函数
+        function stopMove() {
+            clearInterval(g_oTimer);
+            g_oTimer = null;
+        }
+
+        //pc端添加事件
+        if (!isMobile()) {
+            $(".yhnext").hide();
+            $(".yhpre").hide();
+            $(".yhgundong div").on({
+                "mouseover": function () {
+                    stopMove();
+                },
+                "mouseout": function () {
+                    startMove(g_bMoveLeft);
+                }
+            });
+            $(".yhnext").show();
+            $(".yhpre").show();
+
+            $(".yhpre").click(function () {
+                startMove(false);
+            });
+            $(".yhnext").click(function () {
+                startMove(true);
+            });
+        }
+
+        startMove(false);
+        if (isMobile()) {
+            //滑动
+            $('.yhgundong').hammer().on('swipeleft', function () {
+                startMove(false);
+            });
+            $('.yhgundong').hammer().on('swiperight', function () {
+                startMove(true);
+            });
+
+            //左右按钮触摸
+            $('.yhnext').hammer().on('tap', function () {
+                startMove(true);
+            });
+            $('.yhpre').hammer().on('tap', function () {
+                startMove(false);
+            });
+
+            //左右拖动
+            var downX = 0;
+            var downLeft = 0;
+            var touchCenter = 0;
+            var downTime = 0;
+            $('.yhgundong').hammer().on('panstart', function (ev) {
+                downTime = Date.now();
+                stopMove();
+                ev.preventDefault();
+                downX = Math.ceil(ev.gesture.changedPointers[0].clientX);
+                downLeft = parseInt($(this).css("left"));
+                $('.yhgundong').hammer().on('panmove', function (e) {
+
+                    var touchCenter = Math.ceil(e.gesture.changedPointers[0].clientX);
+                    $(".yhgundong").css("left", downLeft + touchCenter - downX);
+                    if (parseInt($(".yhgundong").css("left")) <= -length * g_distance / 2) {
+                        $(".yhgundong").css("left", 0);
+                    }
+                    if (parseInt($(".yhgundong").css("left")) >= 0) {
+                        $(".yhgundong").css("left", -length * g_distance / 2);
+                    }
+
+                });
+                $('.yhgundong').hammer().on('panend', function (e) {
+                    var touchCenter = Math.ceil(e.gesture.changedPointers[0].clientX);
+                    if (touchCenter > downX) {
+                        startMove(true);
+                    } else {
+                        startMove(false);
+                    }
+
+                });
+
+            });
+        }
+        
+		
+        //运动函数执行一次left改变g_iSpeed
+        function doMove() {
+            var scrollElement = $(".yhgundong");
+            var left = parseInt($(".yhgundong").css("left"));
+
+
+
+            if (g_bMoveLeft) {
+
+                left += g_iSpeed;
+                if (left >= 0) {
+                    left -= length * g_distance / 2;
+                }
+
+            } else {
+                left -= g_iSpeed;
+                if (left <= -length * g_distance / 2) {
+
+                    left += length * g_distance / 2;
+
+                }
+            }
+
+            if (g_bPause) {
+
+                if (Math.abs(left - Math.round(left / g_imageDsitance) * g_imageDsitance) < Math.ceil(g_iSpeed / 2)) {
+                    stopMove();
+                    g_oTimerOut = setTimeout
+                    (
+                        function () {
+                            startMove(g_bMoveLeft);
+                        }, g_iPauseTime
+                    );
+
+                    left = Math.round(left / g_imageDsitance) * g_imageDsitance;
+                }
+            }
+
+
+            $(".yhgundong").css("left", left);
+        }
+
+    }());
+
+
+    //快速显示title
+    $.fn.extend({
+        showTitle: function () {
+            var x = 10, y = 20;
+            this.mouseover(function (e) {
+                this.myTitle = this.title;
+                this.title = "";
+                var showDiv = "<div id='showDiv' style='z-index:9999;position: absolute;border: solid 1px #dfdfdf;background-color: white;padding: 0px 2px;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;'>" + this.myTitle + "</div>";
+                $("body").append(showDiv);
+                $("#showDiv").css({
+                    "top": (e.pageY + y) + "px",
+                    "left": (e.pageX + x) + "px"
+                }).show("fast");
+            }).mouseout(function () {
+                this.title = this.myTitle;
+                $("#showDiv").remove();
+            }).mousemove(function (e) {
+                $("#showDiv").css({
+                    "top": (e.pageY + y) + "px",
+                    "left": (e.pageX + x) + "px"
+                });
+            });
+        }
+    });
+    if (!isMobile()) {
+        //手机区title显示
+        $(".lianjie3 img").showTitle();
+        //业务推荐title显示
+        $(".ywtj .row img").showTitle();
+        //4G专区title显示
+        $(".fourg .row img").showTitle();
+        //主广告轮播图 title
+        $(".banner img").showTitle();
+        $(".banner ol li").showTitle();
+        //优惠促销区title
+        //$(".yhcx img").showTitle();
+        //主广告title
+        $(".indexgg .row li a").showTitle();
+    }
+
+    //插码
+    function tagFun(target) {
+        if (typeof(_tag) != 'undefined') {
+            _tag.dcsMultiTrack('WT.event', target);
+        }
+    }
+
+
+    //在线客服
+	/*
+    $(".rfu div").hover(function(){
+        $(this).animate({left:-84+"px"},500);
+    },function(){
+        $(this).animate({left:-20+"px"},500);
+    });
+	*/
+
+    //文件调查
+	/*
+    $(document).ready(function (){
+        $(".rfu2 div").hover(function(){
+            $(this).animate({left:-108+"px"},500);
+        },function(){
+            $(this).animate({left:-20+"px"},500);
+        })
+    });
+	
+
+    if(isMobile()){
+        $("#rfu2").css("display","none");
+        $("#rfu").css("display","none");
+    }
+	*/
+});
+
+
+
+
+/**
+ * Created by stt on 2016/1/20 0020.
+ */
+//动态加载js，无阻塞加载js
+
+function loadScript(url,callback){
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    if(script.readyState){
+        script.onreadystatechange = function(){
+            if(script.readyState=="loaded"||script.readyState=="complete"){
+                script.onreadystatechange = null;
+                callback();
+            }
+        };
+    }else{
+        script.onload = function(){
+            callback();
+        };
+    }
+
+    script.src = url;
+    document.getElementsByTagName("head")[0].appendChild(script);
+
+}
+
+
+//判断手机终端
+//判断是否是移动设备
+function isMobile() {
+    if ((navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i))) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+// 判断字符串是否是手机号码
+// 0是手机号码 1不是11位数字 2号码前缀不正确
+/* 用于检验手机号的位数以及检验此手机中是否为中国移动的手机号 */
+/* 由于存在携号转网的情况 允许3个运营商的全部号段（试点中）*/
+// 移动号码段列表:134,135,136,137,138,139,147,150,151,152,157,158,159,170,172,178,182,183,184,187,188,
+// 联通号码段列表:130,131,132,145,155,156,170,171,175,176,185,186,
+// 电信号码段列表:133,153,170,173,177,180,181,189,
+/*
+function isPhoneNumber(phone) {
+    var rv = 0;
+
+    var mbphnoM = /^(13[4-9])|^(147)|^(150)|^(151)|^(152)|^(157)|^(158)|^(159)|^(170)|^(172)|^(178)|^(182)|^(183)|^(184)|^(187)|^(188)/;
+    var mbphnoU = /^(130)|^(131)|^(132)|^(145)|^(155)|^(156)|^(170)|^(171)|^(175)|^(176)|^(185)|^(186)/;
+    var mbphnoT = /^(133)|^(153)|^(170)|^(173)|^(177)|^(180)|^(181)|^(189)/;
+
+    var num11 = /^\d{11}$/; //11位数字;
+
+    if (null != phone && "" != phone && num11.exec(phone)) {
+
+        if (mbphnoM.exec(phone) || mbphnoU.exec(phone) || mbphnoT.exec(phone)) {
+            rv = 0;
+        }
+        else {
+            rv = 2;
+        }
+    }
+    else {
+        rv = 1;
+    }
+
+    return rv;
+}
+*/
+function isPhoneNumber(phone) {
+    var rv = 0;
+	var mbphno = /^(1)/;
+	var num11 = /^\d{11}$/; //11位数字;
+	if (null != phone && "" != phone && num11.exec(phone)) {
+		if (mbphno.exec(phone)) {
+			rv = 0;
+		}
+		else {
+			rv = 2;
+		}
+	}
+	else {
+		rv = 1;
+	}
+	return rv;
+}
+
+
+
+// Create a cookie with the specified name and value.
+function setCookie(sName, sValue) {
+
+    // Expires the cookie in one month
+    var date = new Date();
+    date.setMonth(date.getMonth() + 1);
+
+    if (window.location.hostname == 'www.10086.cn' || window.location.hostname == '10086.cn') {
+        document.cookie = sName + "=" + escape(sValue) + "; expires=" + date.toUTCString() + "; domain=10086.cn; path=/";
+    }
+    else {
+        document.cookie = sName + "=" + escape(sValue) + "; expires=" + date.toUTCString() + "; path=/";
+    }
+
+}
+
+// Retrieve the value of the cookie with the specified name.
+function getCookie(sName) {
+    // cookies are separated by semicolons
+    var aCookie = document.cookie.split("; ");
+    var aCrumb = null;
+    for (var i=0; i < aCookie.length; i++) {
+        // a name/value pair (a crumb) is separated by an equal sign
+        aCrumb = aCookie[i].split("=");
+        if (sName == aCrumb[0]) {
+            return unescape(aCrumb[1]);
+        }
+    }
+    // a cookie with the requested name does not exist
+    return null;
+}
+
+// Delete the cookie with the specified name.
+function delCookie(sName) {
+
+    if (window.location.hostname == 'www.10086.cn' || window.location.hostname == '10086.cn') {
+        document.cookie = sName + "=; expires=Fri, 31 Dec 1999 23:59:59 GMT; domain=10086.cn; path=/";
+    }
+    else {
+        document.cookie = sName + "=; expires=Fri, 31 Dec 1999 23:59:59 GMT; path=/";
+    }
+
+
+}
+
+
+
+
+var cur_prov_code = "";
+function initProvCodeByIp() {
+	cur_prov_code = "";
+	var XMLHttpRequestObject = false;
+	if (window.XMLHttpRequest) {
+		XMLHttpRequestObject = new XMLHttpRequest();
+	} else if (window.ActiveXObject) {
+		XMLHttpRequestObject = new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	if (XMLHttpRequestObject) {
+		XMLHttpRequestObject.open("GET", "/service/ip/ip.jsp",false);
+		XMLHttpRequestObject.onreadystatechange = function() {
+			if (XMLHttpRequestObject.readyState == 4
+				&& XMLHttpRequestObject.status == 200) {
+				cur_prov_code = getProvCode(XMLHttpRequestObject.responseText.substring(0,3));
+			}
+		}
+		XMLHttpRequestObject.send(null);
+	}
+}
+function initProvCodeByCookie(){
+	cur_prov_code = "";
+	var strCookie = document.cookie;
+	var arrCookie = strCookie.split("; ");
+	for ( var i = 0; i < arrCookie.length; i++) {
+		var arr = arrCookie[i].split("=");
+		if ("CmProvid" == arr[0]) {
+			cur_prov_code = getProvCode(arr[1]);
+			break;
+		}
+	}
+}
+function initProvCodeByUrl(){
+	cur_prov_code = "";
+	var curl = document.URL;
+	for(var i=0;i<=30;i++){
+		if(curl.indexOf("/" + base_provinces[i][1] + "/") != -1){
+			cur_prov_code = base_provinces[i][1];
+			break;
+		}
+	}
+}
+
+//根据URL获取当前登录省份两位简称
+function getCurProvCodeByUrl(){
+	initProvCodeByUrl();
+	return getProvCode(cur_prov_code);
+}
+
+//根据Cookie获取当前登录省份两位简称
+function getCurProvCodeByCookie(){
+	initProvCodeByCookie();
+	return getProvCode(cur_prov_code);
+}
+
+//根据IP获取当前登录省份两位简称
+function getCurProvCodeByIp(){
+	initProvCodeByIp();
+	return getProvCode(cur_prov_code);
+}
+
+//初始化省份数据
+function initProvCode(){
+	initProvCodeByUrl();//第一步：按URL地址初始化
+	if(getProvCode(cur_prov_code) == "000"){
+		initProvCodeByCookie();//第二步：按Cookie初始化
+	}
+	if(getProvCode(cur_prov_code) == "000"){
+		initProvCodeByIp();//第三步：按IP初始化
+	}
+}
+
+
+//获取当前登录省份三位代码
+function getCurProvCode(){
+	initProvCode();
+	return getProvCode(cur_prov_code);
+}
+
+//获取当前登录省份两位简称
+function getCurProvBrief(){
+	initProvCode();
+	return getProvBrief(cur_prov_code);
+}
+
+//获取当前登录省份名称
+function getCurProvName(){
+	initProvCode();
+	return getProvName(cur_prov_code);
+}
+
+//获取当前登录省份三位代码，默认北京
+function getCurProvCode2(){
+	var rv = "";
+	initProvCode();
+	if(getProvCode(cur_prov_code) == "000"){
+		rv = default_prov[0];
+	} else {
+		rv = getProvCode(cur_prov_code);
+	}
+	return rv;
+}
+
+//获取当前登录省份两位简称，默认北京
+function getCurProvBrief2(){
+	var rv = "";
+	initProvCode();
+	if(getProvCode(cur_prov_code) == "000"){
+		rv = default_prov[1];
+	} else {
+		rv = getProvBrief(cur_prov_code);
+	}
+	return rv;
+}
+
+//获取当前登录省份名称，默认北京
+function getCurProvName2(){
+	var rv = "";
+	initProvCode();
+	if(getProvCode(cur_prov_code) == "000"){
+		rv = default_prov[2];
+	} else {
+		rv = getProvName(cur_prov_code);
+	}
+	return rv;
+}
+
+
+/**
+ * Created by stt on 2015/12/16 0016.
+ */
+//判断横屏竖屏幕
+
+if(isMobile()){
+    (function(){
+        var supportOrientation=(typeof window.orientation == "number" && typeof window.onorientationchange == "object");
+
+        var updateOrientation=function(){
+            if(supportOrientation){
+                updateOrientation=function(){
+                    var orientation=window.orientation;
+                    switch(orientation){
+                        case 90:
+                        case -90:
+                            orientation="landscape";
+                            break;
+                        default:
+                            orientation="portrait";
+                    }
+                    if(orientation=="landscape"){
+
+                        if($(window).outerWidth(true)>768){
+                            $('.btns a').css({width: "85px", left: "50%"});
+                        }else{
+                            $('.btns a').css({ width: "100%",left: "0%"});
+                        }
+                    }else{
+                        $('.btns a').css({ width: "100%",left: "0%"});
+                    }
+
+                    //$(".yhgundong").css({"position": "absolute", "left": "0px", "width": length * g_distance});
+                };
+            }else{
+                updateOrientation=function(){
+                    var orientation=(window.innerWidth > window.innerHeight)? "landscape":"portrait";
+                    if(orientation=="landscape"){
+
+                        if($(window).outerWidth(true)>768){
+                            $('.btns a').css({width: "85px", left: "50%"});
+                        }else{
+                            $('.btns a').css({ width: "100%",left: "0%"});
+                        }
+
+                    }else{
+
+                        $('.btns a').css({ width: "100%",left: "0%"});
+                    }
+
+                    //$(".yhgundong").css({"position": "absolute", "left": "0px", "width": length * g_distance});
+                };
+            }
+            updateOrientation();
+        };
+
+        var init=function(){
+            updateOrientation();
+            if(supportOrientation){
+                window.addEventListener("orientationchange",updateOrientation,false);
+            }else{
+                // window.setInterval(updateOrientation,5000);
+                updateOrientation();
+            }
+        };
+
+        if (typeof document.addEventListener != "undefined") {
+            window.addEventListener("DOMContentLoaded",init,false);
+        } else {
+            document.attachEvent("DOMContentLoaded",init);
+        }
+        $(window).resize(function () {
+            init();
+        });
+
+    })();
+}
+
+// 插码函数
+function wtFunction() {
+	if(typeof(_tag)!= 'undefined') {
+		_tag.dcsMultiTrack('WT.event',$(this).attr("wtCode"));
+	}
+}
+
+// 动态设置各个区域的插码内容
+
+// 左导航插码
+var CmLocation = getProvCity();
+if (!isMobile()) {
+   /* for (var i = 0; i < 6; i++) {
+        var $shopA = $("#list235 li").eq(i).find("a");
+        
+		
+        if(i==0){
+            $shopA.attr("wtCode","INDEX_ZDH_L_BUYSJ_"+CmLocation+"");
+			$shopA.on("click",wtFunction);
+        }else if(i==1){
+            $shopA.attr("wtCode","INDEX_ZDH_L_BTC_"+CmLocation+"");
+            $shopA.on("click",wtFunction);
+        }else if(i==2){
+            $shopA.attr("wtCode","INDEX_ZDH_L_BYW_"+CmLocation+"");
+            $shopA.on("click",wtFunction);
+        }else if(i==3){
+            $shopA.attr("wtCode","INDEX_ZDH_L_TPJ_"+CmLocation+"");
+            $shopA.on("click",wtFunction);
+        }else if(i==4){
+            $shopA.attr("wtCode","INDEX_ZDH_L_GRZX_"+CmLocation+"");
+            $shopA.on("click",wtFunction);
+        }else if(i==5){
+            $shopA.attr("wtCode","INDEX_ZDH_L_GRZX_"+CmLocation+"");
+            $shopA.on("click",wtFunction);
+        }else if(i==6){
+            $shopA.attr("wtCode","INDEX_ZDH_L_GRZX_"+CmLocation+"");
+            $shopA.on("click",wtFunction);
+        }
+		
+    }*/
+	$("#list235 li").each(function(index){
+	   $(this).find("a").attr("wtCode","INDEX_HOME_C_ZDH_"+(index+1)+"_"+CmLocation+"");
+	   $(this).find("a").on("click",wtFunction);
+	   $(".navboxLeft").eq(index).find("dt").each(function(dtindex){
+	      $(this).find("a").attr("wtCode","INDEX_HOME_C_ZDH_"+(index+1)+"_"+(dtindex+1)+"_"+CmLocation+"");
+		  $(this).find("a").on("click",wtFunction);
+	   });
+	   $(".navboxLeft").eq(index).find("dd").each(function(ddindex){
+	      $(this).find("a").not(".more").each(function(ddaindex){
+		     $(this).attr("wtCode","INDEX_HOME_C_ZDH_"+(index+1)+"_"+(ddindex+1)+"_"+(ddaindex+1)+"_"+CmLocation+"");
+			 $(this).on("click",wtFunction);
+		  });
+		  $(this).find("a.more").attr("wtCode","INDEX_HOME_C_ZDH_"+(index+1)+"_"+(ddindex+1)+"_MORE_"+CmLocation+"");
+		  $(this).find("a.more").on("click",wtFunction);
+	   });
+	   $(".navboxRight").eq(index).find("a").each(function(advindex){
+	      $(this).attr("wtCode","INDEX_HOME_C_ZDH_"+(index+1)+"_AD_"+(advindex+1)+"_"+CmLocation+"");
+		  $(this).on("click",wtFunction);
+	   });
+	});
+}
+else{
+    $(".list235_pad li").each(function(index){
+	   $(this).find("a").attr("wtCode","INDEX_HOME_C_ZDH_"+(index+1)+"_"+CmLocation+"");
+	   $(this).find("a").on("click",wtFunction);
+	});
+}
+
+
+
+// 主广告区
+for (var i = 0; i < $("#slide_content .carousel-inner a").length; i++) {
+    $("#slide_content .carousel-inner a:eq(" + i + ")").attr("wtCode","INDEX_HOME_C_MAIN_BANNER_"+(i+1)+"_"+CmLocation);
+    $("#slide_content .carousel-inner a:eq(" + i + ")").on("click",wtFunction);
+}
+
+// 商城销售平台接口调用
+if005GetPropertyOption();
+
+//商品价格同步
+$(function(){
+	//bSyncPrice();
+	
+	var hostname = "www1.10086.cn";
+	var arrSpanObj = [];
+	var goodsSkuId = '';
+	$("span[data-goodsid]").each(function(index, obj) {
+		var goodsid = $(obj).attr("data-goodsid");
+		var skuid = $(obj).attr("data-skuid");
+		if(goodsid && skuid) {
+			goodsSkuId += encodeURIComponent("goodsId:" + goodsid + ",skuId:" + skuid) + "_";
+			arrSpanObj.push(obj);
+		}
+	});
+	if (arrSpanObj.length > 0) {
+		drawPrice(goodsSkuId, arrSpanObj);
+	}
+});
+
+function drawPrice(goodsSkuId, arrSpanObj) {
+	var hostname = "www1.10086.cn";
+	$.ajax({
+		//async: false,
+		async: true,
+		url: "http://" + hostname + "/service/homepageprice/homepageprice.jsp?mcmsPrice=" + goodsSkuId,
+		dataType: "jsonp",
+		jsonp: "callback", 
+        jsonpCallback: "jsoncallback",
+		success: function(jsonData) {	
+			for (i = 0; i < arrSpanObj.length; i++) {
+				if (jsonData && jsonData.priceData[i] !== "undefined" && jsonData.priceData[i]) {
+					var tmpprice = (jsonData.priceData[i].cmPriceInterface).substring(1);
+					if (tmpprice !== "售罄") {
+						tmpprice += "元";
+					}
+					$(arrSpanObj[i]).html(tmpprice);	
+				}
+			}
+		}
+	});
+}
+
+/*function bSyncPrice() {
+	var bSyncPrice = false; // 是否存在必须要同步的价格信息
+	var arrSyncList = [false]; // 需要同步的价格区域列表
+	var goodsSkuId = ""; // 价格查询参数
+	var num = $("span[data-goodsid]").size();
+	for (var i = 0; i < num; i++) {
+		var cmPrice1 = $("span[data-goodsid]:eq(" + i + ")").attr("data-goodsid");
+		var cmPrice2 = $("span[data-goodsid]:eq(" + i + ")").attr("data-skuid");
+		if(cmPrice1 != null&&cmPrice2 != null) {
+			goodsSkuId += encodeURIComponent("goodsId:" + cmPrice1 + ",skuId:" + cmPrice2) + "_";
+			arrSyncList[i] = true;
+			bSyncPrice = true;
+		} else {
+			goodsSkuId += "_"
+			arrSyncList[i] = false;
+		}
+	}
+	
+	if (bSyncPrice) { // 同步价格数据
+		var hostname = "www1.10086.cn";
+		var ajaxurlTable;
+		ajaxurlTable = "http://" + hostname + "/service/homepageprice/homepageprice.jsp?mcmsPrice=" + goodsSkuId;
+
+		$.ajax({
+		url: ajaxurlTable,
+		dataType: "jsonp",
+		jsonpCallback: "jsoncallback",
+		success: function(jsonData){		
+				var i;
+				for (i=0;i<num;i++) {
+					if (arrSyncList[i] && jsonData.priceData[i] !== "undefined" && jsonData.priceData[i]) {
+						var tmpprice = (jsonData.priceData[i].cmPriceInterface).substring(1);
+						if(tmpprice!=="售罄"){
+							tmpprice += "元";
+						}
+						$("span[data-goodsid]:eq(" + (i) + ")").html(tmpprice);	
+					}	
+				}
+			}
+		});
+	}
+}*/
+
+
+// 快捷服务区
+    /*var cz_sbtn = document.getElementById("cz_sbtn");
+    if (!document.all || document.documentMode >= 8) {
+        cz_sbtn.onclick = function () {
+            fun_czsubmit2();
+        };
+    } else {
+        cz_sbtn.onclick = function () {
+            fun_czsubmit2();
+        };
+    }*/
+	$('#cz_sbtn').click(function(){
+	    fun_czsubmit2();
+	});
+	$('#m_cz_sbtn').click(function(){
+	    m_fun_czsubmit2();
+	});
+	$('#flow_sbtn').click(function(){
+	    fun_flowsubmit2();
+	});
+	$('#m_flow_sbtn').click(function(){
+	    m_fun_flowsubmit2();
+	});
+
+	//$(".czjf a").attr("wtCode","INDEX_CZJF_" + CmLocation);
+	//$(".czjf a").click(wtFunction);
+
+    var styleContent = "";
+
+    for (var i = 0; i < 12; i++) {
+        styleContent += ".quickbtn .btns a.q" + i + "{background:url(" + $(".quickbtn .btns a:eq(" + i + ")").attr("smallIcon") + ") no-repeat center 15px;}";
+        styleContent += ".quickbtn .btns a.q" + i + ":hover{background:url(" + $(".quickbtn .btns a:eq(" + i + ")").attr("bigIcon") + ") no-repeat center 15px;}";
+    }
+
+    var doc = document;
+    var style = doc.createElement("style");
+    style.setAttribute("type", "text/css");
+
+    if (style.styleSheet) {// IE
+        style.styleSheet.cssText = styleContent;
+    } else {
+        var cssText = doc.createTextNode(styleContent);
+        style.appendChild(cssText);
+    }
+
+    var heads = doc.getElementsByTagName("head");
+    if (heads.length)
+        heads[0].appendChild(style);
+    else
+        doc.documentElement.appendChild(style);
+
+/*
+    for (var i = 0; i < 6; i++) {
+
+
+        var liService = document.getElementById("kjfw_" + i + "");
+        var btntype = $(".quickbtn .btns a:eq(" + i + ")").attr("btntype");
+        if (btntype != 0) {
+            var divMark = document.createElement("div");
+            divMark.className = "xtip";
+
+            liService.appendChild(divMark);
+
+            switch (btntype) {
+                case '1':
+                    divMark.innerHTML = "惠";
+                    break;
+                case '2':
+                    divMark.innerHTML = "促";
+                    break;
+                case '3':
+                    divMark.innerHTML = "折";
+                    break;
+                case '4':
+                    divMark.innerHTML = "新";
+                    break;
+                case '5':
+                    divMark.innerHTML = "抢";
+                    break;
+                case '6':
+                    divMark.innerHTML = "热";
+                    break;
+                case '7':
+                    divMark.innerHTML = "秒";
+                    break;
+                case '8':
+                    divMark.innerHTML = "降";
+                    break;
+                case '9':
+                    divMark.innerHTML = "荐";
+                    break;
+                default:
+                    divMark.innerHTML = "送";
+            }
+        }
+
+
+    }   
+*/	
+    
+/*充值还未做，暂停
+	var pArr = null;
+    pArr = $("#insselect").attr("jelist").split(",");
+    var insselect = document.getElementById("insselect");
+    var jelistlength = 0;
+    if (pArr[pArr.length - 1] != "") {
+        jelistlength = pArr.length;
+    } else {
+        jelistlength = pArr.length - 1;
+    }
+
+    for (var k = 0; k < jelistlength; k++) {
+        var ahref = document.createElement("a");
+        if (k == 1) {
+            ahref.className = "on";
+            document.getElementById("cz_val").value = pArr[k];
+
+            rebate('' + pArr[k] + '');
+        }
+        ahref.id = "cz" + pArr[k] + "";
+        if (!document.all || document.documentMode >= 8) {
+            ahref.setAttribute("onclick", "fun_update_samount(" + (pArr[k]) + ");");
+        } else {
+
+            ahref.cz_val = pArr[k];
+            ahref.onclick = function () {
+                if (window.event) {
+                    var myObj = window.event.srcElement
+                    fun_update_samount(myObj.cz_val);
+                }
+            };
+        }
+        ahref.innerHTML = "" + pArr[k] + "元";
+        ahref.href = "javascript:void(0);"
+        insselect.appendChild(ahref);
+    }
+    
+	var jrother = $("#insselect").attr("jrother");
+    if ((jrother.indexOf("http") == 0) || (jrother.indexOf("https") == 0) || (jrother.indexOf("ftp") == 0)) {
+        var insselect = document.getElementById("insselect");
+        var ahref = document.createElement("a");
+        ahref.id = "cz0";
+        if (!document.all || document.documentMode >= 8) {
+            ahref.setAttribute("onclick", "fun_update_samount(0);");
+        } else {
+            ahref.onclick = function () {
+                fun_update_samount(0);
+            };
+        }
+        ahref.innerHTML = "其他";
+        ahref.href = jrother;
+        insselect.appendChild(ahref);
+    }
+*/
+    
+var tempKJSatus = 0;
+
+$(document).ready(function () {
+
+    // 初始url
+	$('#kjfw_0 a').attr("wtCode","INDEX_HOME_C_KJ_RK_HFCX_"+CmLocation);
+	$('#kjfw_0 a').click(wtFunction);
+	$('#kjfw_1 a').attr("wtCode","INDEX_HOME_C_KJ_RK_LLCX_"+CmLocation);
+	$('#kjfw_1 a').click(wtFunction);
+	$('#kjfw_2 a').attr("wtCode","INDEX_HOME_C_KJ_RK_GJMY_"+CmLocation);
+	$('#kjfw_2 a').click(wtFunction);
+	$('#kjfw_3 a').attr("wtCode","INDEX_HOME_C_KJ_RK_JFDH_"+CmLocation);
+	$('#kjfw_3 a').click(wtFunction);
+	$('#kjfw_4 a').attr("wtCode","INDEX_HOME_C_KJ_RK_YHCX_"+CmLocation);
+	$('#kjfw_4 a').click(wtFunction);
+	$('#kjfw_5 a').attr("wtCode","INDEX_HOME_C_KJ_RK_YWBL_"+CmLocation);
+	$('#kjfw_5 a').click(wtFunction);
+	$('#kjfw_6 a').attr("wtCode","INDEX_HOME_C_KJ_RK_HFCX_YECX_"+CmLocation);
+	$('#kjfw_6 a').click(wtFunction);
+	$('#kjfw_7 a').attr("wtCode","INDEX_HOME_C_KJ_RK_HFCX_TCYL_"+CmLocation);
+	$('#kjfw_7 a').click(wtFunction);
+	$('#kjfw_8 a').attr("wtCode","INDEX_HOME_C_KJ_RK_HFCX_ZDCX_"+CmLocation);
+	$('#kjfw_8 a').click(wtFunction);
+	$('#kjfw_9 a').attr("wtCode","INDEX_HOME_C_KJ_RK_HFCX_DGYW_"+CmLocation);
+	$('#kjfw_9 a').click(wtFunction);
+	$('#kjfw_10 a').attr("wtCode","INDEX_HOME_C_KJ_RK_HFCX_XDCX_"+CmLocation);
+	$('#kjfw_10 a').click(wtFunction);
+	$('#kjfw_11 a').attr("wtCode","INDEX_HOME_C_KJ_RK_HFCX_FH_"+CmLocation);
+	$('#kjfw_11 a').click(wtFunction);
+	/*
+    $('#kuaijiefuwu_0').attr("wtCode","INDEX_HFCX_"+CmLocation);
+    $('#kuaijiefuwu_1').attr("href",$("#kuaijiefuwu_1").attr("btnhref"));
+    $('#kuaijiefuwu_1').attr("wtCode","INDEX_LLCX_"+CmLocation);
+	$('#kuaijiefuwu_1').click(wtFunction);
+    $('#kuaijiefuwu_2').attr("href",$("#kuaijiefuwu_2").attr("btnhref"));
+    $('#kuaijiefuwu_2').attr("wtCode","INDEX_ZFZQ_"+CmLocation);
+	$('#kuaijiefuwu_2').click(wtFunction);
+    $('#kuaijiefuwu_3').attr("href",$("#kuaijiefuwu_3").attr("btnhref"));
+    $('#kuaijiefuwu_3').attr("wtCode","INDEX_JFDH_"+CmLocation);
+	$('#kuaijiefuwu_3').click(wtFunction);
+    $('#kuaijiefuwu_4').attr("href",$("#kuaijiefuwu_4").attr("btnhref"));
+    $('#kuaijiefuwu_4').attr("wtCode","INDEX_YHCX_"+CmLocation);
+	$('#kuaijiefuwu_4').click(wtFunction);
+    $('#kuaijiefuwu_5').attr("href",$("#kuaijiefuwu_5").attr("btnhref"));
+    $('#kuaijiefuwu_5').attr("wtCode","INDEX_YWBL_"+CmLocation);
+
+
+    $('#kuaijiefuwu_0').click(function () {
+		
+		if(typeof(_tag)!= 'undefined'){_tag.dcsMultiTrack('WT.event',$(this).attr("wtCode"));}
+
+        if (tempKJSatus == 0) {
+            $('.btns a').html("");
+            $('.xtip').hide();
+            if (!isMobile()) {
+                $('.btns a').animate({width: "0px", left: "100%"}, 250, function () {
+                    bbn()
+                });
+                $('.btns a').animate({width: "85px", left: "50%"}, 250, function () {
+                    tempKJSatus = 1;
+                });
+            } else {
+                if ($(window).outerWidth(true) > 768) {
+                    $('.btns a').animate({width: "0px", left: "100%"}, 250, function () {
+                        bbn()
+                    });
+                    $('.btns a').animate({width: "85px", left: "50%"}, 250, function () {
+                        tempKJSatus = 1;
+                    });
+                } else {
+                    $('.btns a').animate({width: "0px", left: "50%"}, 250, function () {
+                        bbn();
+                    });
+                    $('.btns a').animate({width: "100%", left: "0%"}, 250, function () {
+                        tempKJSatus = 1;
+                    });
+
+                }
+                //$('.btns a').animate({ width: "0px",left: "50%"}, 250,function(){bbn();});
+                //$('.btns a').animate({ width: "100%",left: "0%"}, 250,function(){tempKJSatus=1;});
+            }
+	        setTimeout(function () {
+	            $('#kuaijiefuwu_0').html($("#kuaijiefuwu_6").attr("btncontent")).attr("href",$("#kuaijiefuwu_6").attr("btnhref")).css('overflow', 'visible');
+	            $('#kuaijiefuwu_1').html($("#kuaijiefuwu_7").attr("btncontent")).attr("href",$("#kuaijiefuwu_7").attr("btnhref")).css('overflow', 'visible');
+	            $('#kuaijiefuwu_2').html($("#kuaijiefuwu_8").attr("btncontent")).attr("href",$("#kuaijiefuwu_8").attr("btnhref")).css('overflow', 'visible');
+	            $('#kuaijiefuwu_3').html($("#kuaijiefuwu_9").attr("btncontent")).attr("href",$("#kuaijiefuwu_9").attr("btnhref")).css('overflow', 'visible');
+	            $('#kuaijiefuwu_4').html($("#kuaijiefuwu_10").attr("btncontent")).attr("href",$("#kuaijiefuwu_10").attr("btnhref")).css('overflow', 'visible');
+	            $('#kuaijiefuwu_5').html($("#kuaijiefuwu_11").attr("btncontent")).css('overflow', 'visible');
+	        }, 500);
+
+        }
+    });
+
+
+    $('#kuaijiefuwu_5').click(function () {
+
+		if(typeof(_tag)!= 'undefined'){_tag.dcsMultiTrack('WT.event',$(this).attr("wtCode"));}
+
+        if (tempKJSatus == 1) {
+            $('.btns a').html("");
+
+            if (!isMobile()) {
+                $('.btns a').animate({width: "0px", left: "100%"}, 250, function () {
+                    ccn();
+                });
+                $('.btns a').animate({width: "85px", left: "50%"}, 250, function () {
+                    tempKJSatus = 0;
+                });
+            } else {
+                if ($(window).outerWidth(true) > 768) {
+                    $('.btns a').animate({width: "0px", left: "100%"}, 250, function () {
+                        ccn();
+                    });
+                    $('.btns a').animate({width: "85px", left: "50%"}, 250, function () {
+                        tempKJSatus = 0;
+                    });
+                } else {
+                    $('.btns a').animate({width: "0px", left: "50%"}, 250, function () {
+                        ccn();
+                    });
+                    $('.btns a').animate({width: "100%", left: "0%"}, 250, function () {
+                        tempKJSatus = 0;
+                    });
+
+                }
+
+
+            }
+
+	        setTimeout(function () {
+	            $('#kuaijiefuwu_0').html($("#kuaijiefuwu_0").attr("btncontent")).css('overflow', 'visible');
+	            $('#kuaijiefuwu_1').html($("#kuaijiefuwu_1").attr("btncontent")).attr("href",$("#kuaijiefuwu_1").attr("btnhref")).css('overflow', 'visible');
+	            $('#kuaijiefuwu_2').html($("#kuaijiefuwu_2").attr("btncontent")).attr("href",$("#kuaijiefuwu_2").attr("btnhref")).css('overflow', 'visible');
+	            $('#kuaijiefuwu_3').html($("#kuaijiefuwu_3").attr("btncontent")).attr("href",$("#kuaijiefuwu_3").attr("btnhref")).css('overflow', 'visible');
+	            $('#kuaijiefuwu_4').html($("#kuaijiefuwu_4").attr("btncontent")).attr("href",$("#kuaijiefuwu_4").attr("btnhref")).css('overflow', 'visible');
+	            $('#kuaijiefuwu_5').html($("#kuaijiefuwu_5").attr("btncontent")).attr("href",$("#kuaijiefuwu_5").attr("btnhref")).css('overflow', 'visible');
+	            $('.xtip').show();
+	        }, 500);
+
+        }
+    });
+	*/
+
+});
+
+/*
+function bbn() {
+    var strprovcity = getProvCity(); // 获得省市代码
+
+    $("#kuaijiefuwu_0").removeClass("q0").addClass("q6");
+    $("#kuaijiefuwu_0").attr("target", "_blank");
+    $("#kuaijiefuwu_0").attr("wtCode","INDEX_HFCX_YECX_" + strprovcity);
+    $("#kuaijiefuwu_0").attr("href", "#");
+    $("#kuaijiefuwu_1").removeClass("q1").addClass("q7");
+    $("#kuaijiefuwu_1").attr("wtCode","INDEX_HFCX_TCYL_" + strprovcity);
+    $("#kuaijiefuwu_1").attr("href", "#");
+    $("#kuaijiefuwu_2").removeClass("q2").addClass("q8");
+    $("#kuaijiefuwu_2").attr("wtCode","INDEX_HFCX_ZDCX_" + strprovcity);
+    $("#kuaijiefuwu_2").attr("href", "#");
+    $("#kuaijiefuwu_3").removeClass("q3").addClass("q9");
+    $("#kuaijiefuwu_3").attr("wtCode","INDEX_HFCX_XDCX_" + strprovcity);
+    $("#kuaijiefuwu_3").attr("href", "#");
+    $("#kuaijiefuwu_4").removeClass("q4").addClass("q10");
+    $("#kuaijiefuwu_4").attr("wtCode","INDEX_HFCX_DGYW_" + strprovcity);
+    $("#kuaijiefuwu_4").attr("href", "#");
+    $("#kuaijiefuwu_5").removeClass("q5").addClass("q11");
+    $("#kuaijiefuwu_5").attr("wtCode","INDEX_HFCX_FH_" + strprovcity);
+    $("#kuaijiefuwu_5").attr("target","");
+    $("#kuaijiefuwu_5").attr("href", "javascript:void(0);");
+}
+
+function ccn() {
+    var strprovcity = getProvCity(); // 获得省市代码
+
+    $("#kuaijiefuwu_0").removeClass("q6").addClass("q0");
+    $("#kuaijiefuwu_0").attr("wtCode","INDEX_HFCX_" + strprovcity);
+    $("#kuaijiefuwu_0").attr("target","");
+    $("#kuaijiefuwu_0").attr("href", "javascript:void(0);");
+    $("#kuaijiefuwu_1").removeClass("q7").addClass("q1");
+    $("#kuaijiefuwu_1").attr("wtCode","INDEX_LLCX_" + strprovcity);
+    $("#kuaijiefuwu_1").attr("href", "#");
+    $("#kuaijiefuwu_2").removeClass("q8").addClass("q2");
+    $("#kuaijiefuwu_2").attr("wtCode","INDEX_ZFZQ_" + strprovcity);
+    $("#kuaijiefuwu_2").attr("href", "#");
+    $("#kuaijiefuwu_3").removeClass("q9").addClass("q3");
+    $("#kuaijiefuwu_3").attr("wtCode","INDEX_JFDH_" + strprovcity);
+    $("#kuaijiefuwu_3").attr("href", "#");
+    $("#kuaijiefuwu_4").removeClass("q10").addClass("q4");
+    $("#kuaijiefuwu_4").attr("wtCode","INDEX_YHCX_" + strprovcity);
+    $("#kuaijiefuwu_4").attr("href", "#");
+    $("#kuaijiefuwu_5").removeClass("q11").addClass("q5");
+    $("#kuaijiefuwu_5").attr("wtCode","INDEX_YWBL_" + strprovcity);
+    $("#kuaijiefuwu_5").attr("target", "_blank");
+    $("#kuaijiefuwu_5").attr("href", "#");
+}
+*/
+
+
+
+
+
+// 优惠促销区
+for (var i = 0; i < $(".hf1200 .hf1200_box").length; i++) {
+    $(".hf1200 .hf1200_box:eq(" + i + ") a").attr("wtCode","INDEX_YHCX_"+(i+1)+"_"+CmLocation);
+    $(".hf1200.hf1200_box:eq(" + i + ") a").on("click",wtFunction);
+}
+
+
+
+// 副广告区
+/*
+if (window.location.href.indexOf("/xj/") == -1) {
+    $(".promotion1200 .promo235 a").attr("wtCode","INDEX_HOME_C_VICE_BANNER_0_"+CmLocation);
+	$(".promotion1200 .promo235 a").on("click",wtFunction);
+    
+    //for (var i = 2; i < 8; i++) {
+		//$("#yhgundong2 .indexbox:eq(" + (i - 1) + ") a").each(function(index, obj){
+			//$(obj).attr("wtCode","INDEX_4G_ZQ_" + (i - 1) + "_"+CmLocation);
+			//$(obj).on("click",wtFunction);
+		//});
+    //}
+	$("#yhgundong2 .indexbox").each(function(index){
+	    $(this).find("a").attr("wtCode","INDEX_HOME_C_VICE_BANNER_"+(index+1)+"_"+CmLocation);
+		$(this).find("a").on("click",wtFunction);
+	});
+} else {
+    $(".promotion1200").hide();
+}
+*/
+
+    $(".promotion1200 .promo235 a").attr("wtCode","INDEX_HOME_C_VICE_BANNER_0_"+CmLocation);
+	$(".promotion1200 .promo235 a").on("click",wtFunction);
+	$("#yhgundong2 .indexbox").each(function(index){
+	    $(this).find("a").attr("wtCode","INDEX_HOME_C_VICE_BANNER_"+(index+1)+"_"+CmLocation);
+		$(this).find("a").on("click",wtFunction);
+	});
+
+// 业务推荐区
+/*
+$(".ywtj .indextitle a").attr("wtCode","INDEX_YWTJ_CKGD_"+CmLocation);
+$(".ywtj .indextitle a").on("click",wtFunction);
+$(".ywtj .titlepic a").attr("wtCode","INDEX_YWTJ_LEFT_"+CmLocation);
+$(".ywtj .titlepic a").on("click",wtFunction);
+for (var i = 0; i < (".ywtj .indexbox").length; i++) {
+    $("#ywtj_" + (i + 1) + " .lianjie1").attr("wtCode","INDEX_YWTJ_" + (i+1) + "_"+CmLocation);
+	$("#ywtj_" + (i + 1) + " .lianjie1").on("click",wtFunction);
+    
+	$("#ywtj_" + (i + 1) + " .lianjie2").attr("wtCode","INDEX_YWTJ_" + (i+1) + "_"+CmLocation);
+	$("#ywtj_" + (i + 1) + " .lianjie2").on("click",wtFunction);
+}
+*/
+
+//楼层区
+//1-5层
+$(".louti .list:lt(5)").each(function(index){
+   $(this).find("a.all").each(function(kjindex){
+       $(this).attr("wtCode","INDEX_HOME_C_FLOOR_"+(index+1)+"_1_ALL_"+CmLocation);
+	   $(this).on("click",wtFunction);
+   });
+   $(this).find("a").not(".all").each(function(kjindex){
+       $(this).attr("wtCode","INDEX_HOME_C_FLOOR_"+(index+1)+"_1_HOT_"+(kjindex+1)+"_"+CmLocation);
+	   $(this).on("click",wtFunction);
+   });
+});
+
+//一层
+for(var i=1;i<=7;i++){
+   $("#fl_1_"+i).find("a").attr("wtCode","INDEX_HOME_C_FLOOR_1_1_AD_"+i+"_"+CmLocation);
+   $("#fl_1_"+i).find("a").on("click",wtFunction);
+}
+
+//二层
+for(var i=1;i<=8;i++){
+   $("#fl_2_"+i).find("a").attr("wtCode","INDEX_HOME_C_FLOOR_2_1_AD_"+i+"_"+CmLocation);
+   $("#fl_2_"+i).find("a").on("click",wtFunction);
+}
+
+//三层
+for(var i=1;i<=7;i++){
+   $("#fl_3_"+i).find("a").attr("wtCode","INDEX_HOME_C_FLOOR_3_1_AD_A_"+i+"_"+CmLocation);
+   $("#fl_3_"+i).find("a").on("click",wtFunction);
+}
+$("#fl_3_brand a").each(function(index){
+   $(this).attr("wtCode","INDEX_HOME_C_FLOOR_3_1_AD_B_"+(index+1)+"_"+CmLocation);
+   $(this).on("click",wtFunction);
+});
+
+//四层
+for(var i=1;i<=9;i++){
+   $("#fl_4_"+i).find("a").attr("wtCode","INDEX_HOME_C_FLOOR_4_1_AD_"+i+"_"+CmLocation);
+   $("#fl_4_"+i).find("a").on("click",wtFunction);
+}
+
+//五层
+$(".tabbox").each(function(index){
+   $(this).find("dl").each(function(dlindex){
+       $(this).find("a").attr("wtCode","INDEX_HOME_C_FLOOR_5_1_T_"+(index+1)+"_"+(dlindex+1)+"_"+CmLocation);
+	   $(this).find("a").on("click",wtFunction);
+   });
+   
+
+})
+
+    $("#banner ul li a").each(function(index){
+		$(this).attr("wtCode","INDEX_HOME_C_FLOOR_5_1_BANNER_"+(index+1)+"_"+CmLocation);
+		$(this).on("click",wtFunction);
+	});
+
+	$(".inner_fy2 .box").each(function(index){
+		$(this).find("a").attr("wtCode","INDEX_HOME_C_FLOOR_5_1_H_"+(index+1)+"_"+CmLocation);
+		$(this).find("a").on("click",wtFunction);
+	});
+
+
+
+
+//六层
+var fl_6_m = $("#louti6").attr("model");
+$("#louti6 ul li a.all").attr("wtCode","INDEX_HOME_C_FLOOR_6_"+fl_6_m+"_ALL_"+CmLocation);
+$("#louti6 ul li a.all").on("click",wtFunction);
+$("#louti6 ul li a").not(".all").each(function(index){
+       $(this).attr("wtCode","INDEX_HOME_C_FLOOR_6_"+fl_6_m+"_HOT_"+(index+1)+"_"+CmLocation);
+	   $(this).on("click",wtFunction);
+});
+
+var yy6_amount = 0;
+switch(fl_6_m){
+  case "1":yy6_amount=8;break;
+  case "2":yy6_amount=6;break;
+  case "3":yy6_amount=7;break;
+}
+for(var i=1;i<=yy6_amount;i++){
+   $("#fl_6_"+i).find("a").attr("wtCode","INDEX_HOME_C_FLOOR_6_"+fl_6_m+"_AD_"+i+"_"+CmLocation);
+   $("#fl_6_"+i).find("a").on("click",wtFunction);
+}
+
+
+//七层
+var fl_7_m = $("#louti7").attr("model");
+$("#louti7 ul li a.all").attr("wtCode","INDEX_HOME_C_FLOOR_7_"+fl_7_m+"_ALL_"+CmLocation);
+$("#louti7 ul li a.all").on("click",wtFunction);
+$("#louti7 ul li a").not(".all").each(function(index){
+       $(this).attr("wtCode","INDEX_HOME_C_FLOOR_7_"+fl_7_m+"_HOT_"+(index+1)+"_"+CmLocation);
+	   $(this).on("click",wtFunction);
+});
+
+var yy7_amount = 0;
+switch(fl_7_m){
+  case "1":yy7_amount=8;break;
+  case "2":yy7_amount=6;break;
+  case "3":yy7_amount=7;break;
+} 
+for(var i=1;i<=yy7_amount;i++){
+   $("#fl_7_"+i).find("a").attr("wtCode","INDEX_HOME_C_FLOOR_7_"+fl_7_m+"_AD_"+i+"_"+CmLocation);
+   $("#fl_7_"+i).find("a").on("click",wtFunction);
+}
+
+//特色专区
+$(".sec1200 .feature_dl").each(function(index){
+   $(this).find("a").attr("wtCode","INDEX_HOME_C_ZONE_"+(index+1)+"_"+CmLocation);
+   $(this).find("a").on("click",wtFunction);
+});
+
+
+// 公告区
+for (var i = 0; i < $(".indexgg ul li").length; i++) {
+   /*
+    if (i == 0) {
+    	$(".indexgg ul li:eq(" + i + ") a").attr("wtCode","INDEX_GG_Z1_"+CmLocation);
+    } else if (i == 1) {
+    	$(".indexgg ul li:eq(" + i + ") a").attr("wtCode","INDEX_GG_Z2_"+CmLocation);
+    } else if (i == 2) {
+    	$(".indexgg ul li:eq(" + i + ") a").attr("wtCode","INDEX_GG_y1_"+CmLocation);
+    } else {
+    	$(".indexgg ul li:eq(" + i + ") a").attr("wtCode","INDEX_GG_y2_"+CmLocation);
+    }
+	*/
+	$(".indexgg ul li:eq(" + i + ") a").attr("wtCode","INDEX_HOME_C_GG_LISTS_"+(i+1)+"_"+CmLocation);
+	$(".indexgg ul li:eq(" + i + ") a").on("click", wtFunction);
+}
+
+
+//国资动态
+for (var i = 0; i < $(".indexgg2 ul li").length; i++) {
+    /*
+    if (i == 0) {
+    	$(".indexgg2 ul li:eq(" + i + ") a").attr("wtCode","INDEX_GZ_Z1_"+CmLocation);
+    } else if (i == 1) {
+    	$(".indexgg2 ul li:eq(" + i + ") a").attr("wtCode","INDEX_GZ_Z2_"+CmLocation);
+    } else if (i == 2) {
+    	$(".indexgg2 ul li:eq(" + i + ") a").attr("wtCode","INDEX_GZ_y1_"+CmLocation);
+    } else {
+    	$(".indexgg2 ul li:eq(" + i + ") a").attr("wtCode","INDEX_GZ_y2_"+CmLocation);
+    }
+	*/
+	$(".indexgg2 ul li:eq(" + i + ") a").attr("wtCode","INDEX_HOME_C_GZDT_LISTS_"+(i+1)+"_"+CmLocation);
+	$(".indexgg2 ul li:eq(" + i + ") a").on("click", wtFunction);
+}
+$(".indexgg2 a.more").attr("wtCode","INDEX_HOME_C_GZDT_MORE_"+CmLocation);
+$(".indexgg2 a.more").on("click", wtFunction);
+
+// 紧急公告区
+if ($(".notice1200 p a") && $(".notice1200 p a").length > 0) {
+	$(".notice1200 p a").attr("wtCode","NDEX_HOME_C_GG_URGENT_"+CmLocation)
+	$(".notice1200 p a").on("click",wtFunction)
+	$(".notice1200").css("display", "block");
+}
+/*if (0 < $(".jjgg a").html().length) {
+    $(".jjgg a").attr("wtCode","INDEX_JJGG");
+    $(".jjgg a").on("click",wtFunction);
+    $(".jjgg").css("display", "block");
+}*/
+
+
+// 辅助需求导航区
+$("#bottom1200 .bottom1200_list").each(function(e, v) {
+	$(v).find(".listbox a").each(function(index, obj) {
+    	$(obj).attr("wtCode","INDEX_HOME_C_FZXQ_" + (e + 1 ) + "_" + (index + 1) + "_" + CmLocation);
+    	$(obj).on("click", wtFunction);
+    	var hostimg = $(obj).attr("hotimg");
+		if (hostimg != "" && hostimg != "null") {
+         	var HotImg = $('<img>');
+            HotImg.attr("class", "serviceHotImg");
+            HotImg.attr("src", hostimg);
+            $(obj).append(HotImg);
+        }
+    });
+	
+});
+
+/*for (var i = 0; i < $("#bottom1200 .bottom1200_list").length; i++) {
+	var hostimg = null;
+	hostimg = $(".index-help .help_list:eq(" + i + ") h2").attr("hotimg");
+    if (hostimg != "" && hostimg != "null") {
+        var HotImg = $('<img>');
+        HotImg.attr("class", "serviceHotImg");
+        HotImg.attr("src",$(".index-help .help_list:eq(" + i + ") h2").attr("hotimg"));
+        $(".index-help .help_list:eq(" + i + ") h2 span").append(HotImg);
+    }
+    
+    for (var j = 0; j < $("#bottom1200 .bottom1200_list:eq(" + i + ") .listbox a").length; j++) {
+        $(".index-help .help_list:eq(" + i + ") .linkgroup a:eq(" + (j) + ")").attr("wtCode","INDEX_SE_FZXQ" + (i+1) + "_" + (j+1) + "_"+CmLocation);
+		$(".index-help .help_list:eq(" + i + ") .linkgroup a:eq(" + (j) + ")").on("click",wtFunction);
+
+        hostimg = $(".index-help .help_list:eq(" + i + ") .linkgroup a:eq(" + (j) + ")").attr("hotimg");
+		if (hostimg != "" && hostimg != "null") {
+         	var HotImg = $('<img>');
+            HotImg.attr("class", "serviceHotImg");
+            HotImg.attr("src",$(".index-help .help_list:eq(" + i + ") .linkgroup a:eq(" + (j) + ")").attr("hotimg"));
+            $(".index-help .help_list:eq(" + i + ") .linkgroup a:eq(" + (j) + ")").append(HotImg);
+        }
+    }
+}*/
+
+
+// 在线客服区
+$(".lf_fix2 li:eq(0) a").each(function(index, obj) {
+	$(obj).attr("wtCode","INDEX_HOME_C_FU_ZXKF_ZXZX_"+ CmLocation);
+	$(obj).on("click", wtFunction);
+});
+$(".lf_fix2 li:eq(1) a").each(function(index, obj) {
+	$(obj).attr("wtCode","INDEX_HOME_C_FU_ZXKF_CJWT_"+ CmLocation);
+	$(obj).on("click", wtFunction);
+});
+$(".lf_fix2 li:eq(2) a").each(function(index, obj) {
+	$(obj).attr("wtCode","INDEX_HOME_C_FU_ZXKF_TSJY_"+ CmLocation);
+	$(obj).on("click", wtFunction);
+});
+/*$("#rfu .cjwt a").attr("wtCode","INDEX_ZXKF_ZXZX_" + CmLocation);
+$("#rfu .cjwt a").on("click",wtFunction);
+$("#rfu .zxzx a").attr("wtCode","INDEX_ZXKF_CJWT_" + CmLocation);
+$("#rfu .zxzx a").on("click",wtFunction);
+$("#rfu .tsjy a").attr("wtCode","INDEX_ZXKF_TSJY_" + CmLocation);
+$("#rfu .tsjy a").on("click",wtFunction);
+*/
+
+//扫黄打非插码
+$(".lf_fix1 a").attr("wtCode","INDEX_HOME_C_FU_SHDF_"+CmLocation);
+$(".lf_fix1 a").on("click",wtFunction);
+
+
+$("img.lazy").lazyload();
+
+
+
+//反转义
+function decodeHtml(s){
+	var d = document.createElement('div');
+	d.innerHTML = s;
+	return $(d).text();
+}
+
+//是否手机访问
+function isPhone(){
+	if (navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)) {
+		return true;
+	}
+	return false;
+}
+
+//公告区 20170615添加
+
+function loadNotice(){
+	
+	// 集团新闻 第一条
+	$.get("/aboutus/news/groupnews/1_general.js",function(rep){
+
+        var obj = JSON.parse(rep.substring(rep.indexOf("=")+1,rep.indexOf("}]}")+3))
+
+        var arrcData = obj['cData'];
+		
+		for (var i=0;i<arrcData.length;i++) {
+			$(".indexgg ul li:eq(0) a").attr("href",arrcData[i].href).attr("title",decodeHtml(decodeHtml(arrcData[i].title1))).html(decodeHtml(decodeHtml(arrcData[i].title1)));
+			$(".indexgg ul li:eq(0) em").html(decodeHtml(decodeHtml(arrcData[i].publish_time)).substring(0,10));
+			break;
+		}
+	})
+	// 省公司新闻公告 第一条
+	$.get("/aboutus/news/pannounce/"+getCurProvBrief2()+"/1_general.js",function(rep){
+
+        var obj = JSON.parse(rep.substring(rep.indexOf("=")+1,rep.indexOf("}]}")+3))
+
+        var arrcData = obj['cData'];
+		
+		for (var i=0;i<arrcData.length;i++) {
+			$(".indexgg ul li:eq(1) a").attr("href",arrcData[i].href).attr("title",decodeHtml(decodeHtml(arrcData[i].title1))).html(decodeHtml(decodeHtml(arrcData[i].title1)));
+			$(".indexgg ul li:eq(1) em").html(decodeHtml(decodeHtml(arrcData[i].publish_time)).substring(0,10));
+			break;
+		}
+	})
+	// 集团公告 第一条
+	$.get("/aboutus/news/announced/1_general.js",function(rep){
+
+        var obj = JSON.parse(rep.substring(rep.indexOf("=")+1,rep.indexOf("}]}")+3))
+
+        var arrcData = obj['cData'];
+		arrcData = getRoamingNotice(arrcData);
+		
+		for (var i=0;i<arrcData.length;i++) {
+			$(".indexgg ul li:eq(2) a").attr("href",arrcData[i].href).attr("title",decodeHtml(decodeHtml(arrcData[i].title1))).html(decodeHtml(decodeHtml(arrcData[i].title1)));
+			$(".indexgg ul li:eq(2) em").html(decodeHtml(decodeHtml(arrcData[i].publish_time)).substring(0,10));
+			break;
+		}
+	})
+	// 省公司新闻公告 第二条
+	$.get("/aboutus/news/pannounce/"+getCurProvBrief2()+"/1_general.js",function(rep){
+
+        var obj = JSON.parse(rep.substring(rep.indexOf("=")+1,rep.indexOf("}]}")+3))
+
+        var arrcData = obj['cData'];
+		
+		for (var i=1;i<arrcData.length;i++) {
+			$(".indexgg ul li:eq(3) a").attr("href",arrcData[i].href).attr("title",decodeHtml(decodeHtml(arrcData[i].title1))).html(decodeHtml(decodeHtml(arrcData[i].title1)));
+			$(".indexgg ul li:eq(3) em").html(decodeHtml(decodeHtml(arrcData[i].publish_time)).substring(0,10));
+			break;
+		}
+	})
+}
+
+
+//获取国漫公告数据列表
+function getRoamingNotice(data){
+	
+	$.ajaxSetup({    
+        async : false    
+    }); 
+	
+	var arrcData1 = "";
+	var arrcData2 = "";
+	$.get("/roaming/notice/1_general.js",function(rep){
+
+        var obj = JSON.parse(rep.substring(rep.indexOf("=")+1,rep.indexOf("}]}")+3))
+
+        arrcData1 = obj['cData'];
+		
+	})
+	
+	if(arrcData1 == ""){
+		arrcdata2 = data;
+	}else{
+		arrcData2 = data.concat(arrcData1);
+		arrcData2.sort(function(a,b){
+			if(new Date(a.publish_time).getTime() < new Date(b.publish_time).getTime()){
+				return 1;
+			}else if(new Date(a.publish_time).getTime() > new Date(b.publish_time).getTime()){
+				return -1;
+			}else{
+				return 0;
+			}
+		})
+	}
+	return arrcData2;
+}
+
+//国资动态 20170615添加
+function loadGzdt(){
+	$.get("/aboutus/news/sasac/1_general.js",function(rep){
+
+        var obj = JSON.parse(rep.substring(rep.indexOf("=")+1,rep.indexOf("}]}")+3))
+
+        var arrcData = obj['cData'];
+		
+		for (var i=0;i<arrcData.length;i++) {
+			if (i==4) {
+				break;
+			}
+			$(".indexgg2 li:eq("+i+") a").attr("href",arrcData[i].href).attr("title",decodeHtml(decodeHtml(arrcData[i].title1))).html(decodeHtml(decodeHtml(arrcData[i].title1)));
+			$(".indexgg2 li:eq("+i+") span").html(decodeHtml(decodeHtml(arrcData[i].publish_time)).substring(0,10));
+			$(".indexgg2 li:eq("+i+")").show();
+		}
+		if(isPhone()){
+			$(".indexgg2 li:eq(2),.indexgg2 li:eq(3)").hide();
+		}
+	})
+}
+/*
+// 国资动态插码 20170615添加
+for (var i = 0; i < $(".indexgg2 ul li").length; i++) {
+    $(".indexgg2 ul li:eq(" + i + ") a").attr("wtCode","INDEX_HOME_C_GZDT_LISTS_"+(i+1)+"_"+CmLocation);
+}
+$(".indexgg2 a:eq(0)").attr("wtCode","INDEX_HOME_C_GZDT_MORE_"+CmLocation);
+$(".indexgg2 a").on("click",wtFunction);
+*/
+
+
+loadNotice();
+
+loadGzdt();
+
+//扫黄打非插码 + 问卷调查 插码
+/*
+$(".rfu2 a:eq(0)").attr("wtCode","INDEX_ZZZQ_SHDF_"+CmLocation);
+//$(".rfu2 a:eq(1)").attr("wtCode","INDEX_WJDC_"+CmLocation);
+$(".rfu2 a").on("click",wtFunction);
+*/
+
+// 商城销售平台接口调用-开始
+function jsonDataShow(data){
+	var d = JSON.parse(data);
+	var obj = d['result'];
+	var arrcData = obj['data'];
+	//var arrcCatalogId = new Array("101","101","101","101","134","134","134","128","140","140","140","140","140","140");
+	//var arrcPropertyId = new Array("174","175","176","177","187","188","189","184","179","180","181","182","183","184");
+	var arrcCatalogId = new Array("101","101","101","101","134","134","134","128");
+	var arrcPropertyId = new Array("111","1000025","330","1000023","1111","2222","3333","148");
+	//var arrcNavboxLeft = new Array(1,1,1,1,2,2,2,4,5,5,5,5,5,5);
+	//var arrcDd = new Array(1,2,3,4,0,1,2,1,0,1,3,4,5,6);
+	var arrcNavboxLeft = new Array(1,1,1,1,2,2,2,4);
+	var arrcDd = new Array(1,2,3,4,0,1,2,1);
+//	var arrcDd = new Array(0,1,2,0,1,2,3,0,1,2,3,0,1,2,3,4,5);
+	var indexOne = 0;
+	var indexTwo = 0;
+	
+	for (var i=0;i<arrcData.length;i++) {
+		var arrcPropertyInfo = arrcData[i]['propertyInfo'];
+		for (var j=0;j<arrcPropertyInfo.length;j++) {
+			for (var k=0;k<arrcPropertyId.length;k++) {
+				if (arrcData[i].catalogId == arrcCatalogId[k] && arrcPropertyInfo[j].propertyId == arrcPropertyId[k]) {
+					addDataElement(arrcNavboxLeft[k], arrcDd[k], arrcPropertyInfo[j]);
+				}
+			}
+		}
+	}
+}
+
+function addDataElement(navboxLeft, dd, dataObj){ 
+	// 位置DIV的ID为类目ID_属性ID
+	var cmId = $(".navbox .navboxLeft:eq(" + navboxLeft + ") dd").get(dd);
+	var arrcHrefShow = dataObj['hrefShow'];
+	var pronum = getCurProvCode2();
+	var citynum = getProvCity();
+	var datalimit = 20;
+	if(arrcHrefShow.length <= datalimit){
+	  datalimit = arrcHrefShow.length;
+	}
+	for (var i=0;i<datalimit;i++) {
+		var ahref = document.createElement("a");
+		if(i == 0){
+		   ahref.innerHTML = arrcHrefShow[i].name.replace(/全部/,"更多");
+		   ahref.className += "more";
+		}
+		else{
+		   ahref.innerHTML = arrcHrefShow[i].name;
+		}
+		var zdhhref = arrcHrefShow[i].href;
+		var provCity = getProvCity();
+		var pro_city = provCity.split("|");
+		zdhhref = zdhhref.replace(/{province}/, pro_city[0])
+		zdhhref = zdhhref.replace(/{city}/, pro_city[1])
+		ahref.href = "http://shop.10086.cn" + zdhhref;
+		ahref.target = "_blank";
+		cmId.insertBefore(ahref, cmId.firstChild);
+	}
+}
+
+function if005GetPropertyOption(){ 
+	var urlclo = "http://www1.10086.cn/web-Center/shopservice/if005_get_property_option.do";
+	var curtime = (new Date).getTime(); 
+	var secret = getSecret();
+	var version = getVersion();
+	var timestamp = curtime;
+	var digest = getDigest(curtime,secret); 
+	var conversationId = getConversationId(curtime); 
+	var channelId = getChannelId();
+	
+	var json  = {};
+	json["serviceName"] = "if005_get_property_option";
+	
+	var header = {};
+	header["version"] = version;
+	header["timestamp"] = timestamp;
+	header["digest"] = digest;
+	header["conversationId"] = conversationId;
+	json["header"] = header;
+	
+	var data = {};
+	data["channelId"] = channelId;
+	json["data"] = data;
+	
+	$.ajax({
+		type : "POST",
+		url : urlclo,
+		data : {requestJson : JSON.stringify(json)},
+		async : true,
+		success: function(data) { 
+		     var d = JSON.parse(data);
+			 if(d.result.responseCode == "0000"){
+				jsonDataShow(data);
+			 }
+			//导航栏消除最后栏竖线
+			$('.navboxLeft dl dd').each(function(){
+			  $(this).find('a:last').css('border-right','none');
+			});
+	   }
+	   ,
+	   error : function() {}
+	});
+	
+}
+// 商城销售平台接口调用-结束
+
+
+/*----------页面交互效果JS-----------*/
+		$(function(){
+			//在线客服开始
+			$('.lf_fix2 li').hover(function(){
+				$(this).stop().find('.wz').show();
+				$(this).addClass('cur');
+			},function(){
+				$(this).stop().find('.wz').hide();
+				$(this).removeClass('cur');
+			});
+			
+			//主广告图鼠标放上显示左右箭头
+			$('#bootstrap-touch-slider').hover(function(){
+			  $('.control-round .carousel-control').css('display','block');
+			},function(){
+			  $('.control-round .carousel-control').css('display','none');
+			});
+			
+			//顶部登录摁纽划过
+			  /*
+			  $('.login').hover(function(){
+				  $('.login_a').addClass('login_a_h');
+				  $('.login_box').show();
+			  },function(){
+				  $('.login_a').removeClass('login_a_h');
+				  $('.login_box').hide();
+			  });
+			
+				
+			  $('.a2').hover(function(){
+				  $('.a2_a').addClass('a2_a_h');
+				  $('.a2_box').show();
+			  },function(){
+				  $('.a2_a').removeClass('a2_a_h');
+				  $('.a2_box').hide();
+			  });
+			  */
+	  
+		    //头部登录摁纽划过
+		    $('.head_navbtn01').hover(function(){
+			    $('.loginbtn02').css("border-bottom","0px");
+			    $('.loginbox02').show();
+		    },function(){
+			    $('.loginbtn02').css("border-bottom","1px solid #dadada");
+			    $('.loginbox02').hide();
+		    });
+			
+			//楼层效果和吸顶头部
+			var nav=$("#menu");
+			var win=$(window);
+			var sc=$(document);
+			//var ud = 0;
+			var sp = 0;
+			var idx = 0;
+			var ifb = false;
+			var ccgheight = $('#louti1').height(); 
+			var wckheight = $(window).height(); 
+			$("#menu ul li").hover(function(){
+				$(this).addClass('hover').siblings().removeClass('hover');	
+			},function(){
+				$(this).removeClass('hover').siblings().removeClass('hover');	
+			});
+			$("#menu ul li").not(".back").click(function(){ 			
+                var hedheight = $('#head2').height();
+				ifb = true;
+                if(ifb == true){				
+			    $(this).find('span').addClass('active').parent().siblings().find('span').removeClass('active');
+				}
+				idx=$(this).index()+1;
+				//var _top=$("#louti"+idx).offset().top - hedheight;
+				var _top = $(".louti").eq(idx-1).offset().top - hedheight;
+				$("body,html").animate({scrollTop:_top},500,function(){
+				   ifb = false;
+				});
+				if(typeof(_tag)!= "undefined"){_tag.dcsMultiTrack("WT.event","INDEX_HOME_C_FLOOR_NAV_"+idx+"_"+CmLocation);} 
+			});
+			
+			$("#menu .back a").attr("wtCode","INDEX_HOME_C_FLOOR_NAV_FH_"+CmLocation);
+	        $("#menu .back a").on("click",wtFunction);
+			
+			
+			win.scroll(function(){
+			 if(ifb == false){
+			    sp = sc.scrollTop();
+                var hedheight = $('#head2').height(); 	
+                var toplc1 = $("#louti1").offset().top - hedheight; 
+				var topzks = $("#slide_content").offset().top - hedheight + $("#slide_content").height(); 
+				var toplcf = $(".sec1200:eq(0)").offset().top - hedheight;
+				if(sp>=topzks){
+					$('#head2').css('display','block');
+				}
+				else{
+					$('#head2').css('display','none');
+				}
+                if(sp>=toplc1){ 
+					$("#menu").css('display','block');
+					$(".louti").each(function(index){
+					   var ltdwz = $('.louti').eq(index).offset().top - hedheight;
+					   if(sp>=ltdwz){
+						  $("#menu ul li").eq(index).find('span').addClass("active").parent().siblings().find("span").removeClass("active");
+					   }
+					   if(sp>=toplcf){
+					      $("#menu ul li:not('.back')").find('span').removeClass("active");
+					   }
+					})
+				}else{
+					$("#menu").css('display','none');
+				}				
+			 }
+			 /*
+			  if(ifb == false){
+			    sp = sc.scrollTop();
+				var hedheight = $('#head2').height(); 
+			    var toplc1 = $("#louti1").offset().top - hedheight; 
+				//var index=Math.floor((sc.scrollTop() - $("#louti1").offset().top)/ccgheight); 
+				if(wckheight >= ccgheight){ 
+				    var ltwju = (wckheight - ccgheight)/2; 
+				    //var ltdwz = $('.louti').eq(index).offset().top - ltwju;
+					var ltdwz1 = $('.louti').eq(0).offset().top - ltwju;
+					if(sp>=ltdwz1){
+					    $("#menu").css('display','block');
+						$(".louti").each(function(index){
+						     var ltdwz = $('.louti').eq(index).offset().top - ltwju;
+						    //下滚
+						    if(sp >= ud){
+								if(sp>=ltdwz){
+								  $("#menu ul li").eq(index).find('span').addClass("active").parent().siblings().find("span").removeClass("active");
+								}
+							}
+							//上滚
+							else{
+							    if(sp >= (ltdwz - ccgheight) && sp <= ($('.louti').eq(index).offset().top + ccgheight)){
+								  $("#menu ul li").eq(index-1).find('span').addClass("active").parent().siblings().find("span").removeClass("active");
+								}
+							}
+						});	
+					}
+					else{
+					    $("#menu").css('display','none');
+					}
+				}
+				if(sp>=toplc1){ 
+					$('#head2').css('display','block');
+					//$("#menu").css('display','block');
+   					//$("#menu ul li").eq(index).find('span').addClass("active").parent().siblings().find("span").removeClass("active");
+				}else{
+					$('#head2').css('display','none');
+					//$("#menu").css('display','none');
+				}
+				
+				ud = sp;
+				}
+				*/
+			});
+			
+			//和娱乐标签切换
+			var $tabnav_li = $('.tabnav li');
+			$tabnav_li.mouseover(function(){
+				$(this).addClass('active').siblings().removeClass('active');
+				var idx2 = $tabnav_li.index(this);
+				$('.tabbox').hide();
+				$('.tabbox').eq(idx2).show();
+			});
+			
+			//紧急公告区 关闭
+			$('.notice1200 .shut').click(function(){
+				$(this).parent().hide();
+			});
+ 			//IPAD底部五个点击展开收起
+			/*
+			var oBottom1200 = document.getElementById('bottom1200');
+			var oBottom1200_h = oBottom1200.getElementsByTagName('h2');
+			var oListbox = oBottom1200.querySelectorAll('.listbox');
+			
+			if( parseFloat(getStyle(oBottom1200,'marginTop'))===0 ){
+				for(var i=0;i<oBottom1200_h.length;i++){
+					oBottom1200_h[i].onoff = true;
+					oBottom1200_h[i].index = i;
+					
+					oBottom1200_h[i].onclick = function(){
+						for(var i=0;i<oBottom1200_h.length;i++){
+							if( i!=this.index){
+								oBottom1200_h[i].onoff = true;
+								oBottom1200_h[i].className = '';
+								oListbox[i].style.display = 'none';	
+							}
+						}
+						
+						if(this.onoff){
+							this.className = 'active';
+							oListbox[this.index].style.display = 'block';
+						}else{
+							this.className = '';
+							oListbox[this.index].style.display = 'none';
+						}
+						this.onoff = !this.onoff;
+					}
+				}
+			}
+			*/
+			$('#bottom1200 .bottom1200_list h2').each(function(index){
+			    $(this).click(function(){ 
+				   $('#bottom1200 .bottom1200_list h2').removeClass('active');
+				   if($('.bottom1200_list .listbox').eq(index).css('display') == 'none'){ 
+				      $(this).addClass('active');
+				      $('.bottom1200_list .listbox').css('display','none');
+				      $('.bottom1200_list .listbox').eq(index).css('display','block');
+				   }
+				   else{
+				      $('.bottom1200_list .listbox').css('display','none');
+				   }
+				});
+			});
+			//end
+			
+			if(!isMobile()){
+			// 获取cookieID为www_yindao的cookie值
+			var guideFlag =getCookie('www_yindao');
+			// 如果有值，则将引导体删除，如果没值，则为此cookie设置值，并且显示引导
+			if(!!guideFlag){ 
+			  $('#indexLayer').remove();
+			}
+			else{
+			  $('#indexLayer').css('display','block');
+			}
+			$('#indexLayer .shut').click(function(){
+			// 如果引导标示不存在，那么新设置www_yindao
+            var exp_yd = new Date();
+            exp_yd.setTime(exp_yd.getTime() + 365*24*60*60*1000);
+            document.cookie = "www_yindao=2017; path=/;expires=" + exp_yd.toGMTString();
+			$('#indexLayer').remove();
+			})
+			
+			var jl_height = 0;
+			//第一层动作
+			$('#indexLayer .next1').click(function(){
+				$('#indexLayer #page1').css('display','none');
+				$('#indexLayer #page2').css('display','block');
+			    if($('#ad1200').length>0){
+			      jl_height = $('#ad1200').height();
+				}
+				if(jl_height > 0){
+				  $("body,html").animate({scrollTop:jl_height+"px"},500);
+				}
+			})
+			//第二层动作
+			var promotion1200 = $('#promotion1200').offset().top - 126;
+			$('#indexLayer .last2').click(function(){
+				$('#indexLayer #page1').css('display','block');
+				$('#indexLayer #page2').css('display','none');
+				//$("body,html").animate({scrollTop:0},500);
+				if($('#ad1200').length>0){
+			      jl_height = $('#ad1200').height();
+				}
+				if(jl_height >= 0){
+				  $("body,html").animate({scrollTop:0},500);
+				}
+			})
+			$('#indexLayer .next2').click(function(){
+				$('#indexLayer #page3').css('display','block');
+				$('#indexLayer #page2').css('display','none');
+				//$("body,html").animate({scrollTop:promotion1200},500);
+				if($('#ad1200').length>0){
+			      jl_height = $('#ad1200').height();
+				}
+				if(jl_height >= 0){
+				  $("body,html").animate({scrollTop:(jl_height+promotion1200)+"px"},500);
+				}
+			});
+			//第三层动作
+			var louti1 = $('#louti1').offset().top-60;
+			$('#indexLayer .last3').click(function(){
+				$('#indexLayer #page2').css('display','block');
+				$('#indexLayer #page3').css('display','none');
+				//$("body,html").animate({scrollTop:0},500);
+				if($('#ad1200').length>0){
+			      jl_height = $('#ad1200').height();
+				}
+				if(jl_height >= 0){
+				  $("body,html").animate({scrollTop:jl_height+"px"},500);
+				}
+			})
+			$('#indexLayer .next3').click(function(){
+				$('#indexLayer #page4').css('display','block');
+				$('#indexLayer #page3').css('display','none');
+				//$("body,html").animate({scrollTop:louti1},500);	
+				if($('#ad1200').length>0){
+			      jl_height = $('#ad1200').height();
+				}
+				if(jl_height >= 0){
+				  $("body,html").animate({scrollTop:(jl_height+louti1)+"px"},500);
+				}
+			})
+			//第四层动作
+			var louti5 = $('#louti5').offset().top-60;
+			$('#indexLayer .last4').click(function(){
+				$('#indexLayer #page3').css('display','block');
+				$('#indexLayer #page4').css('display','none');
+				//$("body,html").animate({scrollTop:promotion1200},500);
+				if($('#ad1200').length>0){
+			      jl_height = $('#ad1200').height();
+				}
+				if(jl_height >= 0){
+				  $("body,html").animate({scrollTop:(jl_height+promotion1200)+"px"},500);
+				}
+			})
+			$('#indexLayer .next4').click(function(){
+				$('#indexLayer #page5').css('display','block');
+				$('#indexLayer #page4').css('display','none');
+				//$("body,html").animate({scrollTop:louti5},500);
+                if($('#ad1200').length>0){
+			      jl_height = $('#ad1200').height();
+				}
+				if(jl_height >= 0){
+				  $("body,html").animate({scrollTop:(jl_height+louti5)+"px"},500);
+				}				
+			})
+			//第五层动作
+			$('#indexLayer .last5').click(function(){
+				$('#indexLayer #page4').css('display','block');
+				$('#indexLayer #page5').css('display','none');
+				//$("body,html").animate({scrollTop:louti1},500);
+                if($('#ad1200').length>0){
+			      jl_height = $('#ad1200').height();
+				}
+				if(jl_height >= 0){
+				  $("body,html").animate({scrollTop:(jl_height+louti1)+"px"},500);
+				}				
+			})
+			$('#indexLayer .next5').click(function(){
+			    // 如果引导标示不存在，那么新设置www_yindao
+				var exp_yd = new Date();
+				exp_yd.setTime(exp_yd.getTime() + 365*24*60*60*1000);
+				document.cookie = "www_yindao=2017; path=/;expires=" + exp_yd.toGMTString();
+				$('#indexLayer').remove();
+				$('#indexLayer').remove();
+				$("body,html").animate({scrollTop:0},500);	
+			})
+			}
+			
+		});
+		
+		window.onload = function() {
+			//左侧导航划入划出代码
+			var oList235 = document.getElementById('list235');
+			if (oList235 !== 'undefined' && oList235) {
+				var oLis = oList235.getElementsByTagName('li');
+				var oNavbox = document.querySelectorAll('.navbox');
+				var timer2 = null;
+				var num = 0;
+					
+				if (oLis !== 'undefined' && oLis) {
+					for(var i=0;i<oLis.length;i++){
+						oLis[i].index = i;
+						oLis[i].onmouseover = function(){
+							clearInterval( timer2 );
+							for(var i=0;i<oLis.length;i++){
+								oLis[i].className = '';
+								oNavbox[i].style.display = 'none';		
+							}
+							this.className = 'cur';
+							oNavbox[this.index].style.display = 'block';	
+						}
+						oLis[i].onmouseout = function(){
+							num = this.index;
+							timer2 = setTimeout(function(){
+								oLis[num].className = '';
+								oNavbox[num].style.display = 'none';
+							},400);	
+						}
+					}
+				}
+					
+				if (oNavbox !== 'undefined' && oNavbox) {	
+					for(var i=0;i<oNavbox.length;i++){
+						oNavbox[i].index = i;
+						oNavbox[i].onmouseover = function(){
+							clearInterval( timer2 );
+							for(var i=0;i<oLis.length;i++){
+								oLis[i].className = '';
+								oNavbox[i].style.display = 'none';		
+							}
+							oLis[this.index].className = 'cur';
+							this.style.display = 'block';	
+						}
+						oNavbox[i].onmouseout = function(){
+							num = this.index;
+							timer2 = setTimeout(function(){
+								oLis[num].className = '';
+								oNavbox[num].style.display = 'none';
+							},400);	
+						}
+					}
+				}
+			}
+			
+			//冲流量充话费切换开始
+			var oTags = document.querySelectorAll('.tags');
+			var oTagsbox = document.querySelectorAll('.tagsbox');
+			for(var i=0;i<oTags.length;i++){
+				oTags[i].index = i;
+				oTags[i].onclick = function(){
+					for(var i=0;i<oTags.length;i++){
+						oTags[i].className = 'tags';
+						oTagsbox[i].style.display = 'none';
+					}
+					this.className = 'active';
+					oTagsbox[this.index].style.display = 'block';
+				}
+			}
+			
+			//大家都喜欢点赞
+			var heart = document.querySelectorAll('.heart');
+			for(var i=0;i<heart.length;i++){
+				heart[i].onoff = true;
+				heart[i].onclick = function(){
+					if(this.onoff){
+						this.src = 'images/index5/heart_focus.jpg';
+					}else{
+						this.src = 'images/index5/heart.jpg';
+					}
+					this.onoff=!this.onoff;
+				}
+			}
+			
+			//PAD时，头部点击展开效果
+			/*var oIcon = document.querySelector('.h_icon1');
+			var oHlist = document.querySelector('.h_list');
+			var oShut2 = document.querySelector('.shut2');
+			if (oIcon != 'undefined' && oIcon) {
+				oIcon.onclick = function(){
+					oHlist.style.display = 'block';
+				}
+			}
+			if (oShut2 != 'undefined' && oShut2) {
+				oShut2.onclick = function(){
+					oHlist.style.display = 'none';
+				}
+			}*/
+			
+			//PAD时，左侧导航点击展开效果
+			/*var allService = document.querySelector('.allService');
+			var list235_pad = document.querySelector('.list235_pad');
+			var list235_li = list235_pad.getElementsByTagName('li');
+			var nav235 = document.querySelector('.nav235');
+			allService.onoff = true;
+
+			allService.onclick = function(){
+				if( this.onoff && getStyle(nav235,'display')=='none' ){
+					list235_pad.style.display = 'block';
+				}else{
+					list235_pad.style.display = 'none';
+				}
+				this.onoff=!this.onoff;
+			}
+			function getStyle( obj, attr ){
+				return obj.currentStyle ? obj.currentStyle[attr] : getComputedStyle( obj )[attr];
+			}
+			for(var i=0;i<list235_li.length;i++){
+				list235_li[i].onclick = function(){
+					list235_pad.style.display = 'none';
+					allService.onoff = true;
+				}
+			}*/
+			
+			
+			//IPAD 冲流量/充话费切换
+			var oTags_m = document.querySelectorAll('.m_tags');
+			var oTagsbox_m = document.querySelectorAll('.m_tagsbox');
+			for(var i=0;i<oTags_m.length;i++){
+				oTags_m[i].index = i;
+				oTags_m[i].onclick = function(){
+					for(var i=0;i<oTags_m.length;i++){
+						oTags_m[i].className = 'm_tags';
+						oTagsbox_m[i].style.display = 'none';
+					}
+					this.className = 'active';
+					oTagsbox_m[this.index].style.display = 'block';
+				}
+			}
+			
+
+			
+			var dian = document.getElementById('dian');
+			var back = document.getElementById('backa');
+			var face1 = document.getElementById('iconRowA');
+			var face2 = document.getElementById('iconRowB');
+			var face1_a = face1.getElementsByTagName('a');
+			var face2_a = face2.getElementsByTagName('a');
+			var tm1 = null;
+			var tm2 = null;
+			var wth = document.body.clientWidth;
+			
+			if (dian !== 'undefined' && dian) {
+				dian.onclick = function(){
+					for(var i=0;i<face1_a.length;i++){
+						face1_a[i].className = 'aaa'	
+					}
+	
+					tm1 = setTimeout(function(){
+						face1.style.display = 'none';
+						face2.style.display = 'flex';	
+						
+						for(var i=0;i<face1_a.length;i++){
+							face1_a[i].className = '';
+	                        face1_a[i].className = 'box';					
+						}
+						clearInterval( tm1 );
+					}, 500);
+				}
+			}
+			
+			if (back !== 'undefined' && back) {
+				back.onclick = function(){
+					for(var i=0;i<face2_a.length;i++){
+						face2_a[i].className = 'bbb'	
+					}
+	
+					tm2 = setTimeout(function(){
+						face2.style.display = 'none';
+						face1.style.display = 'flex';	
+						
+						for(var i=0;i<face2_a.length;i++){
+							face2_a[i].className = '';
+							face2_a[i].className = 'box'
+						}
+						clearInterval( tm2 );
+					}, 500);
+				}
+			}
+		}
+		$(function(){
+		    //处理不正常显示左导航二级导航 
+		    $('.navboxLeft dl').each(function(){
+			    if($.trim($(this).find('dt a').html()).length <=0){
+				    $(this).css('display','none');
+				}
+				$(this).find('dd a').each(function(index){
+				   if($.trim($(this).html()).length <=0){
+				      $(this).css('display','none');
+				   }
+				});
+			});
+			//首发移动
+			$('.tabbox').each(function(index){
+			    $(this).find('.tabbox_inner .rg img').eq(0).click(function(){ 
+				    $('.tabbox').eq(index).find('.inner_fy').css('display','none');
+					$('.tabbox').eq(index).find('.inner_fy').eq(0).css('display','block');
+					$(this).siblings('.rg em').html('1/2');
+			     });
+			    $(this).find('.tabbox_inner .rg img').eq(1).click(function(){ 
+					 $('.tabbox').eq(index).find('.inner_fy').css('display','none');
+					 $('.tabbox').eq(index).find('.inner_fy').eq(1).css('display','block');
+					 $(this).siblings('.rg em').html('2/2');
+				  });  
+			});
+			//专辑推荐移动
+			$('.recomandbox .rg img').eq(0).click(function(){ 
+			   $('.recomandbox .inner_fy2').css('display','none');
+			   $('.recomandbox .inner_fy2').eq(0).css('display','block');
+			   $(this).siblings('.rg em').html('1/2');
+			});
+			$('.recomandbox .rg img').eq(1).click(function(){
+			   $('.recomandbox .inner_fy2').css('display','none');
+			   $('.recomandbox .inner_fy2').eq(1).css('display','block');
+			   $(this).siblings('.rg em').html('2/2');
+			});
+	
+	
+			//栏目翻转
+			$('#iconsA ul li:eq(0)').click(function(){ 
+			  $('.icons ul li p,.icons ul li span').css('display','none');
+			  $('#iconsA ul li a img').animate({width:'0px',marginLeft:'0'},30,function(){
+			     $('.icons').css('display','none');
+			     $('#iconsB').css('display','block');
+				 $('#iconsB li img').animate({width:'32px',marginLeft:'-16px'},30,function(){
+				    $('.icons ul li p,.icons ul li span').css('display','block');
+				 });
+			  });
+			});
+	
+			$('#iconsB ul li:last').click(function(){ 
+			  $('.icons ul li p,.icons ul li span').css('display','none');
+			  $('#iconsB ul li a img').animate({width:'0px',marginLeft:'0'},30,function(){
+			     $('.icons').css('display','none');
+			     $('#iconsA').css('display','block');
+				 $('#iconsA li img').animate({width:'32px',marginLeft:'-16px'},30,function(){
+				    $('.icons ul li p,.icons ul li span').css('display','block');
+				 });
+			  });
+			 
+			});
+			
+			
+			
+			//选择充值切换
+			//手机充值PC端
+						$('#cz_val').val(parseInt($('.insselect:eq(0) a').eq(0).html()));
+			//折扣接口
+			
+			var czzhekou = 1;
+			var jsonObj = {"30":"9.9折","50":"9.9折","100":"9.9折","200":"9.9折","300":"9.9折","400":"9.9折","500":"9.9折"}; // 封装数据
+			/*
+			//rebate(); 
+			var getPros = getCurProvCode2();
+			var curtime = (new Date).getTime(); // 当前时间
+			var url = "http://www1.10086.cn/web-Center/personalCenter/if010_query_hint.do";
+			var secret = getSecret();
+			var version = getVersion();
+			var timestamp = curtime;
+			var digest = getDigest(curtime,secret);
+			var conversationId = getConversationId(curtime);
+			var channelId = "40";
+			
+			var json  = {};
+			json["serviceName"] = "if010_query_hint";
+			
+			var header = {};
+			header["version"] = version;
+			header["timestamp"] = timestamp;
+			header["digest"] = digest;
+			header["conversationId"] = conversationId;
+			json["header"] = header;
+			
+			var data = {};
+			data["provId"] = getPros;
+			data["channelId"] = channelId;
+			json["data"] = data;
+
+			$.ajax({
+				type : "POST",
+				url : url,
+				data : {requestJson : JSON.stringify(json)},
+				async : true,
+				xhrFields:{
+					  withCredentials:true
+					},
+				crossDomain:true,
+				success : function(rs) { 
+					if (!!rs) {
+						var result = JSON.parse(rs);
+						var responseCode = result.result.response_code;
+						if (responseCode == '0000') { 
+							 var zkData = result.result.data; 
+							 
+							 var jsonDate = JSON.parse(rs); //paramStr 是接口返回数据， 如果parse异常， 再试下eval('(' + paramStr + ')')
+							 var feeDatas = jsonDate.result.data; //数组
+							   for (var i in feeDatas) {
+								  var key = feeDatas[i].oweFee + ""; //转成字符串
+								  jsonObj[key] = feeDatas[i].specialOffer;
+							   }
+							  	
+						}
+					}
+				},
+				error : function() {}
+			});
+			
+			*/
+			 
+			   var getCz = $('#cz_val').val();
+			   czzhekou = parseFloat(jsonObj[getCz])/10; 
+			$('.insselect:eq(0) a').eq(0).addClass('on');
+			$('.tagsbox_btn:eq(0) span font').html(parseInt($('.insselect:eq(0) a').eq(0).html()) * czzhekou);
+			$('.insselect:eq(0) a').click(function(){ 
+			    $('.insselect:eq(0) a').removeClass('on');
+			    $(this).addClass('on');
+                $('#cz_val').val(parseInt($(this).html()));
+			    var czcliVal = $('#cz_val').val();
+			    czzhekou = parseFloat(jsonObj[czcliVal])/10;
+			    //var czsjs = parseInt($(this).html()) * rebate(parseInt($('.insselect:eq(0) a').eq(0).html()));  //等有数据有操作
+				var czsjs = parseInt($(this).html()) * czzhekou;
+			    $('.tagsbox_btn:eq(0) span font').html(czsjs);
+			});
+			//手机充值PAD
+			//var m_czzhekou = rebate(parseInt($('.m_insselect:eq(0) a').eq(0).html()));
+            $('#m_cz_val').val(parseInt($('.m_insselect:eq(0) a').eq(0).html()));
+			$('.m_insselect:eq(0) a').eq(0).addClass('on');
+			$('.m_tagsbox_btn:eq(0) span font').html(parseInt($('.m_insselect:eq(0) a').eq(0).html()) * czzhekou);
+			$('.m_insselect:eq(0) a').click(function(){
+			    $('.m_insselect:eq(0) a').removeClass('on');
+			    $(this).addClass('on');
+                $('#m_cz_val').val(parseInt($(this).html()));
+			    //var czpds = parseInt($(this).html()) * rebate(parseInt($('.m_insselect:eq(0) a').eq(0).html()));   //等有数据有操作
+				var m_czcliVal = $('#m_cz_val').val();
+			    czzhekou = parseFloat(jsonObj[m_czcliVal])/10;
+				var czpds = parseInt($(this).html()) * czzhekou;
+			    $('.m_tagsbox_btn:eq(0) span font').html(czpds);
+			});
+			
+			//流量充值PC端
+			if($('.insselect:eq(1) a').length>0){
+			var first_flowll = $('.insselect:eq(1) a').eq(0).find('span.one').html();
+			if(first_flowll.indexOf('G')>0 || first_flowll.indexOf('g')>0){
+				  first_flowll = parseInt(first_flowll) * 1024;
+			}
+			else{
+				  first_flowll = parseInt(first_flowll);
+			}
+			$('#flow_val').val(first_flowll);
+			var clzhekou = 1;
+			$('.insselect:eq(1) a').eq(0).addClass('on');
+			$('.tagsbox_btn:eq(1) span font').html(parseInt($('.insselect:eq(1) a').eq(0).find('span.two').html()) * clzhekou);
+			$('.insselect:eq(1) a').click(function(){
+			    $('.insselect:eq(1) a').removeClass('on');
+			    $(this).addClass('on');
+                var flowll = $(this).find('span.one').html();
+				if(flowll.indexOf('G')>0 || flowll.indexOf('g')>0){
+				  flowll = parseInt(flowll) * 1024;
+				}
+				else{
+				  flowll = parseInt(flowll);
+				}
+				$('#flow_val').val(flowll);
+			    var clsjs = parseInt($(this).find('span.two').html()) * clzhekou;
+			    $('.tagsbox_btn:eq(1) span font').html(clsjs);
+			});
+			}
+			//流量充值PAD
+			if($('.m_insselect:eq(1) a').length>0){
+			var m_first_flowll = $('.m_insselect:eq(1) a').eq(0).find('span.one').html();
+			if(m_first_flowll.indexOf('G')>0 || m_first_flowll.indexOf('g')>0){
+				  m_first_flowll = parseInt(m_first_flowll) * 1024;
+			}
+			else{
+				  m_first_flowll = parseInt(m_first_flowll);
+			}
+			$('#m_flow_val').val(m_first_flowll);
+			$('.m_insselect:eq(1) a').eq(0).addClass('on');
+			$('.m_tagsbox_btn:eq(1) span font').html(parseInt($('.m_insselect:eq(1) a').eq(0).find('span.two').html()) * clzhekou);
+			$('.m_insselect:eq(1) a').click(function(){
+			    $('.m_insselect:eq(1) a').removeClass('on');
+			    $(this).addClass('on');
+                var m_flowll = $(this).find('span.one').html();
+				if(m_flowll.indexOf('G')>0 || m_flowll.indexOf('g')>0){
+				  m_flowll = parseInt(m_flowll) * 1024;
+				}
+				else{
+				  m_flowll = parseInt(m_flowll);
+				}
+				$('#m_flow_val').val(m_flowll);
+			    var clpds = parseInt($(this).find('span.two').html()) * clzhekou;
+			    $('.m_tagsbox_btn:eq(1) span font').html(clpds);
+		    });
+			}
+			
+			//判断IPAD端处理显示推荐词,多余的隐藏
+			function is_iPad(){ 
+				var ua = navigator.userAgent.toLowerCase(); 
+				if(ua.match(/iPad/i)=="ipad") { 
+				   return true; 
+				} else { 
+				   return false; 
+				} 
+			}
+			if(is_iPad()){
+			   $('.allService').attr('href','javascript:;');
+			   $('.louti').each(function(x){
+			     if($(this).find('ul.list li').length > 4){
+				   $(this).find('ul.list li:gt(3)').css('display','none');
+				 }
+			   });
+			   
+			   //全部服务下拉
+				$('.allService').click(function(){
+				   if($('#nav235').css('display') == 'none'){
+						if($('.list235_pad').css('display') == 'none'){
+							$('.list235_pad').css('display','block');
+						}
+						else if($('.list235_pad').css('display') == 'block'){
+						   $('.list235_pad').css('display','none');
+						}
+					}
+				});
+			   
+			}
+			
+			
+			
+		});
