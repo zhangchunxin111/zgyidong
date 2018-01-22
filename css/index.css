@@ -292,18 +292,19 @@ body{
 	overflow: hidden;
 }
 .aside ul li{
-	/*width: 233px;
-	height: 52px;
 	
-	overflow: hidden;*/
 	 width: 233px;
     height: 52px;
-    border: 1px solid #fff;
+    /*border: 1px solid #fff;*/
     background: #ffffff url(../img/nav_bgli.png) no-repeat 195px center;
 }
-.aside ul li:hover .navbox{
-	display: block;
+
+.aside ul li.active{
+	    /*border: 1px solid #3eb4fa;*/
+    border-right: 2px solid #FFFFFF;
+    /*background: #ffffff url(../img/nav_bgli.jpg) no-repeat 195px center;*/
 }
+
 .navbox{
 	display: none;
     width: 963px;
@@ -315,10 +316,10 @@ body{
     position: absolute;
     left: 235px;
     top: -1px;
-    z-index: 9;
+    z-index: 99999;
 }
 
-.navbox .active{
+.navbox.active{
 	display: block;
 }
 .navleft{
